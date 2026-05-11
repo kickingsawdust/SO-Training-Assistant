@@ -131,11 +131,10 @@
     .step-item.locked { opacity: .38; pointer-events: none; }
     .step-check {
       width: 15px; height: 15px; border: 1px solid var(--border); border-radius: 3px;
-      flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
       font-size: 9px; transition: all .12s;
     }
     .step-check.done { background: var(--green); border-color: var(--green); color: #000; }
-    .step-item.locked .step-check { pointer-events: none; }
     .step-label { flex: 1; line-height: 1.3; font-size: 0.81rem; }
     .lock-icon { font-size: 0.6rem; color: var(--text3); }
 
@@ -1612,7 +1611,6 @@ function buildCourseMap() {
       const check = document.createElement('div');
       check.className = 'step-check' + (progress[step.id] ? ' done' : '');
       check.textContent = progress[step.id] ? '✓' : '';
-      if (!locked) check.addEventListener('click', e => { e.stopPropagation(); toggleDone(step.id); });
 
       const lbl = document.createElement('span');
       lbl.className = 'step-label';
