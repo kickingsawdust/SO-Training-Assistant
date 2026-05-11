@@ -315,9 +315,185 @@ Key reminders students often need:
 - After modeler or datasource plugin changes, restart zenhub too
 - Export the ZenPack after each meaningful change (Advanced > ZenPacks > Export)
 - Use zendmd to inspect the live object model interactively
-- Use snmpwalk to verify OIDs — don't trust MIB docs alone`;
+- Use snmpwalk to verify OIDs — don't trust MIB docs alone
+
+Dev environment facts (answer setup questions from any step):
+- System requirements: 4 CPU cores, 20 GB RAM, 75 GB storage; single-host Zenoss deployment recommended
+- zenoss user setup:
+    groupadd --gid=1206 zenoss
+    adduser --uid=1337 --gid=1206 zenoss
+    (add to wheel, docker, and serviced groups)
+- Shared /z directory (accessible inside and outside containers):
+    mkdir -p /z
+    chown -R zenoss:zenoss /z
+    Edit /etc/default/serviced, add: SERVICED_OPTS="--mount *,/z,/z"
+    Restart serviced after this change
+- Install ZenPackLib (run as zenoss user, inside Zope):
+    serviced service run zope zenpack-manager install ZenPacks.zenoss.ZenPackLib-2.1.1.egg
+- Useful bash aliases students should add to .bashrc:
+    alias zendmd='serviced service run zope zendmd'
+    alias zenmodeler='serviced service run zope zenmodeler'
+    alias zenpack='serviced service run zope zenpack'
+    alias zendisc='serviced service run zope zendisc'
+- For debugging: reduce Zope instances to 1 (allows pdb breakpoints); set collector services to manual start to save resources
+- All tutorial work happens as the zenoss user inside /z`;
 
 const STEPS = [
+  // ── Prerequisites ──
+  {
+    track: 'Prerequisites',
+    id: 'prereq-background',
+    label: 'What is ZDK?',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/background/',
+    greeting: "Welcome! Before jumping into the tutorials, let's make sure you understand what the ZDK is and what you'll be building. What would you like to know?",
+    quickPrompts: ['What is a ZenPack?', 'What is zenpacklib?', 'What can I define in YAML?', 'Who is ZDK for?'],
+    context: `CURRENT LESSON: ZDK Background — What is the ZenPack Development Kit?
+
+The ZenPack Development Kit (ZDK) is a collection of development tools and documentation for building custom ZenPacks — plugins that extend Zenoss Collection Zone and Resource Manager.
+
+What ZenPacks can do:
+- Add zProperties (configuration properties like credentials, thresholds, flags)
+- Define device classes with specific monitoring behavior
+- Create monitoring templates (datasources, datapoints, thresholds, graphs)
+- Add new device and component types with custom attributes
+- Define relationships between device and component types
+- Create event classes and process classes
+- Add impact triggers and device link providers
+
+The ZDK provides the zenpacklib Python library. With it, you describe your ZenPack in a YAML file (zenpack.yaml) instead of clicking through the Zenoss web interface. This makes ZenPacks:
+- Repeatable and version-controllable
+- Consistent across installations
+- Faster to build and easier to maintain
+
+Who should use ZDK:
+- You prefer YAML files over browser-based template creation
+- You need custom device or component types
+- You want zProperties in your ZenPack
+- You need relationships between device types and components
+
+Even experienced developers use Python to extend the functionality that zenpacklib provides — YAML and Python complement each other.
+
+ZenPack naming convention: ZenPacks.<organization>.<Name>
+Examples: ZenPacks.training.NetBotz, ZenPacks.zenoss.ZenPackLib, ZenPacks.acme.Widgeter`
+  },
+  {
+    track: 'Prerequisites',
+    id: 'prereq-dev-env',
+    label: 'Dev Environment Setup',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/dev-env/',
+    greeting: "Let's get your development environment set up. This covers the system requirements, user configuration, the /z shared directory, and a few tweaks that make development much smoother. Where are you starting from — fresh install, or do you have Zenoss already running?",
+    quickPrompts: ['What are the system requirements?', 'How do I set up the zenoss user?', 'What is the /z directory?', 'How do I configure serviced?', 'What bash aliases should I add?'],
+    context: `CURRENT LESSON: Dev Environment Setup
+
+Reference: https://zenpacks.zenoss.io/zdk/dev-env/
+
+System requirements:
+  - 4 CPU cores minimum
+  - 20 GB RAM
+  - 75 GB storage
+  - Single-host Zenoss Collection Zone or Resource Manager installation
+  - Linux OS (RHEL/CentOS typical)
+
+Step 1 — Create the zenoss user with specific UID/GID:
+  groupadd --gid=1206 zenoss
+  adduser --uid=1337 --gid=1206 zenoss
+  Add zenoss to groups: wheel, docker, serviced
+  usermod -aG wheel zenoss
+  usermod -aG docker zenoss
+  usermod -aG serviced zenoss
+
+Step 2 — Create the /z shared directory:
+  mkdir -p /z
+  chown -R zenoss:zenoss /z
+  This directory is accessible both on the host and inside containers.
+
+Step 3 — Configure serviced to mount /z into containers:
+  Edit /etc/default/serviced
+  Add or update: SERVICED_OPTS="--mount *,/z,/z"
+  Then restart serviced: systemctl restart serviced
+  This makes /z available at /z inside every service container.
+
+Step 4 — Add bash aliases (add to /home/zenoss/.bashrc):
+  alias zendmd='serviced service run zope zendmd'
+  alias zenmodeler='serviced service run zope zenmodeler'
+  alias zenpack='serviced service run zope zenpack'
+  alias zendisc='serviced service run zope zendisc'
+  Then: source ~/.bashrc
+
+Step 5 — Optimize for development:
+  - Reduce Zope instances to 1: enables pdb (Python debugger) breakpoints
+  - Set collector services (zenperfsnmp, zenmodeler, etc.) to manual start to save RAM
+  Both settings are in the Zenoss Control Plane UI under service configuration.
+
+Common gotchas:
+  - UID 1337 and GID 1206 must match exactly — Zenoss containers expect these values
+  - /z must be created BEFORE restarting serviced or the mount fails silently
+  - All tutorial work should be done as the zenoss user (not root)
+  - If /z isn't visible inside a container, check the SERVICED_OPTS line and restart serviced`
+  },
+  {
+    track: 'Prerequisites',
+    id: 'prereq-get-started',
+    label: 'Getting Started',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/get-started/',
+    greeting: "Almost ready to start the tutorials. This step covers installing ZenPackLib and verifying your environment works end-to-end — creating a test ZenPack and validating the YAML. Have you already installed ZenPackLib?",
+    quickPrompts: ['How do I install ZenPackLib?', 'How do I create my first ZenPack?', 'How do I validate my zenpack.yaml?', 'How do I install a ZenPack in dev mode?'],
+    context: `CURRENT LESSON: Getting Started with ZDK
+
+Reference: https://zenpacks.zenoss.io/zdk/get-started/
+
+Step 1 — Install ZenPackLib (run as zenoss user):
+  serviced service run zope zenpack-manager install ZenPacks.zenoss.ZenPackLib-2.1.1.egg
+  - Download the .egg from the ZenPack Catalog first
+  - Requires a running Zenoss environment
+  - Run from the host, not inside a container
+
+Step 2 — Verify zenpacklib is available:
+  zenpacklib --version
+  (uses the alias set up in dev environment)
+
+Step 3 — Create a new ZenPack:
+  cd /z
+  zenpacklib --create ZenPacks.training.NetBotz
+  This generates:
+    ZenPacks.training.NetBotz/
+      setup.py
+      MANIFEST.in
+      ZenPacks/training/NetBotz/
+        __init__.py
+        zenpack.yaml
+        modeler/
+        datasources/
+        tests/
+
+Step 4 — Set environment variables for convenience:
+  export ZP_TOP_DIR=/z/ZenPacks.training.NetBotz
+  export ZP_DIR=$ZP_TOP_DIR/ZenPacks/training/NetBotz
+  Add these to .bashrc to persist across sessions.
+
+Step 5 — Validate zenpack.yaml:
+  zenpacklib --lint $ZP_DIR/zenpack.yaml
+  Returns silently on success; prints errors if something is wrong.
+  Common error: "Unrecognized parameter" = typo in a key name.
+
+Step 6 — Install in development mode:
+  zenpack --link --install $ZP_TOP_DIR
+  serviced service restart Zope
+  --link flag = developer mode: Python file changes take effect without reinstall.
+  zenpack.yaml changes still require reinstall.
+
+Step 7 — Reinstall after zenpack.yaml changes:
+  zenpack --link --install $ZP_TOP_DIR
+  serviced service restart Zope
+  (restart zenhub too if modeler or datasource plugins changed)
+
+Common gotchas:
+  - Run zenpacklib --create from /z, not from inside the ZenPack directory
+  - Always work as the zenoss user
+  - --link is critical for dev mode — without it, Python edits require a full reinstall
+  - After install, Zope restart is mandatory before changes take effect in the UI`
+  },
+
   // ── SNMP Track ──
   {
     track: 'SNMP Tutorial',
