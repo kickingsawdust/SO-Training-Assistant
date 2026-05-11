@@ -1,0 +1,27 @@
+{
+  "session_id": "session-2026-05-11-1031",
+  "started": "2026-05-11T15:31:54.898Z",
+  "files_read": {
+    "/home/closs/CLAUDE/REPO/SO-Training-Assistant/zdk-training-assistant-handoff.md": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-05-11T15:33:50.580Z"
+    }
+  },
+  "files_written": [
+    {
+      "file": "/home/closs/CLAUDE/REPO/SO-Training-Assistant/index.html",
+      "action": "create",
+      "tokens": 19270,
+      "at": "2026-05-11T15:50:02.206Z"
+    }
+  ],
+  "edit_counts": {
+    "index.html": 1
+  },
+  "anatomy_hits": 0,
+  "anatomy_misses": 1,
+  "repeated_reads_warned": 0,
+  "cerebrum_warnings": 0,
+  "stop_count": 3
+}

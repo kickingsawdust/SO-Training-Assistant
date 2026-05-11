@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZDK Training Assistant</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sidebar-w: 280px;
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3352;
+      --accent: #4f8ef7;
+      --accent2: #6c63ff;
+      --text: #e2e8f0;
+      --text2: #94a3b8;
+      --text3: #64748b;
+      --green: #22c55e;
+      --yellow: #facc15;
+      --red: #f87171;
+      --code-bg: #141824;
+    }
+
+    html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+
+    /* ── Key Entry Screen ── */
+    #key-screen {
+      display: flex; align-items: center; justify-content: center;
+      height: 100vh; padding: 24px;
+    }
+    .key-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 40px; max-width: 480px; width: 100%;
+    }
+    .key-card h1 { font-size: 1.5rem; margin-bottom: 6px; }
+    .key-card p { color: var(--text2); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.6; }
+    .key-card input[type="password"] {
+      width: 100%; padding: 10px 14px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+      font-size: 0.95rem; margin-bottom: 12px;
+    }
+    .key-card input[type="password"]:focus { outline: none; border-color: var(--accent); }
+    .remember-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; font-size: 0.85rem; color: var(--text2); }
+    .remember-row input { accent-color: var(--accent); cursor: pointer; }
+    .btn-primary {
+      width: 100%; padding: 11px; background: var(--accent); color: #fff;
+      border: none; border-radius: 8px; font-size: 0.95rem; cursor: pointer;
+      font-weight: 600; transition: opacity .15s;
+    }
+    .btn-primary:hover { opacity: .88; }
+    .key-note { margin-top: 16px; font-size: 0.78rem; color: var(--text3); line-height: 1.5; }
+
+    /* ── Main Layout ── */
+    #app { display: none; height: 100vh; overflow: hidden; }
+    #app.visible { display: flex; }
+
+    /* Sidebar */
+    #sidebar {
+      width: var(--sidebar-w); flex-shrink: 0; background: var(--surface);
+      border-right: 1px solid var(--border); display: flex; flex-direction: column;
+      overflow: hidden; transition: width .25s ease, transform .25s ease;
+    }
+    #sidebar.collapsed { width: 0; overflow: hidden; }
+    .sidebar-header {
+      padding: 16px 16px 12px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .sidebar-title { font-size: 0.8rem; font-weight: 700; letter-spacing: .08em; color: var(--text3); text-transform: uppercase; }
+    .sidebar-key-btn {
+      font-size: 0.72rem; color: var(--text3); background: none; border: 1px solid var(--border);
+      border-radius: 5px; padding: 3px 8px; cursor: pointer;
+    }
+    .sidebar-key-btn:hover { color: var(--text); border-color: var(--text3); }
+    .sidebar-nav { overflow-y: auto; flex: 1; padding: 8px 0; }
+    .track-label {
+      padding: 10px 16px 4px; font-size: 0.7rem; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; color: var(--accent); opacity: .8;
+    }
+    .step-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 16px; cursor: pointer; transition: background .12s;
+      font-size: 0.85rem; color: var(--text2); border-left: 3px solid transparent;
+    }
+    .step-item:hover { background: var(--surface2); color: var(--text); }
+    .step-item.active { background: var(--surface2); color: var(--text); border-left-color: var(--accent); }
+    .step-check {
+      width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 4px;
+      flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 10px; transition: all .12s;
+    }
+    .step-check.done { background: var(--green); border-color: var(--green); color: #000; }
+    .step-label { flex: 1; line-height: 1.3; }
+
+    /* Main panel */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    .top-bar {
+      padding: 12px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+      background: var(--surface);
+    }
+    #hamburger {
+      background: none; border: none; color: var(--text2); cursor: pointer;
+      padding: 4px; font-size: 1.2rem; display: none;
+    }
+    #step-title { font-size: 1rem; font-weight: 600; flex: 1; }
+    #doc-link { font-size: 0.78rem; color: var(--accent); text-decoration: none; opacity: .8; }
+    #doc-link:hover { opacity: 1; }
+    #mark-done-btn {
+      font-size: 0.78rem; padding: 5px 12px; border-radius: 6px;
+      border: 1px solid var(--border); background: none; color: var(--text2);
+      cursor: pointer; transition: all .12s; white-space: nowrap;
+    }
+    #mark-done-btn:hover { border-color: var(--green); color: var(--green); }
+    #mark-done-btn.done { background: var(--green); border-color: var(--green); color: #000; font-weight: 600; }
+
+    /* Quick prompts */
+    #quick-prompts {
+      padding: 10px 20px 6px; border-bottom: 1px solid var(--border);
+      display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; background: var(--surface);
+    }
+    .qp-btn {
+      font-size: 0.78rem; padding: 5px 11px; border-radius: 16px;
+      border: 1px solid var(--border); background: var(--surface2);
+      color: var(--text2); cursor: pointer; transition: all .12s;
+    }
+    .qp-btn:hover { border-color: var(--accent); color: var(--text); }
+
+    /* Messages */
+    #messages {
+      flex: 1; overflow-y: auto; padding: 20px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .msg { display: flex; gap: 12px; max-width: 860px; }
+    .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+    .msg-avatar {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;
+    }
+    .msg.assistant .msg-avatar { background: var(--accent2); color: #fff; }
+    .msg.user .msg-avatar { background: var(--accent); color: #fff; }
+    .msg-bubble {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 16px; font-size: 0.9rem; line-height: 1.65;
+      max-width: calc(100% - 44px);
+    }
+    .msg.user .msg-bubble { background: var(--accent); border-color: transparent; color: #fff; }
+
+    /* Markdown inside bubbles */
+    .msg-bubble h1, .msg-bubble h2, .msg-bubble h3 { margin: 12px 0 6px; font-size: 1rem; }
+    .msg-bubble p { margin-bottom: 10px; }
+    .msg-bubble p:last-child { margin-bottom: 0; }
+    .msg-bubble ul, .msg-bubble ol { margin: 8px 0 8px 20px; }
+    .msg-bubble li { margin-bottom: 4px; }
+    .msg-bubble code:not(.hljs) {
+      background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+      font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.85em;
+      color: #a5d6ff;
+    }
+    .msg.user .msg-bubble code:not(.hljs) { background: rgba(0,0,0,.25); color: #e2e8f0; }
+    .code-block-wrap { position: relative; margin: 10px 0; }
+    .code-block-wrap pre {
+      background: var(--code-bg) !important; border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px 16px; overflow-x: auto;
+      font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.82rem;
+      line-height: 1.55; color: #c9d1d9;
+    }
+    .copy-btn {
+      position: absolute; top: 8px; right: 8px; font-size: 0.72rem;
+      padding: 3px 9px; border-radius: 5px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text3); cursor: pointer; transition: all .12s;
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--text3); }
+    .copy-btn.copied { color: var(--green); border-color: var(--green); }
+    .msg-bubble blockquote {
+      border-left: 3px solid var(--accent); padding-left: 12px;
+      color: var(--text2); margin: 8px 0;
+    }
+
+    /* Typing indicator */
+    .typing-dot {
+      display: inline-block; width: 6px; height: 6px; background: var(--text3);
+      border-radius: 50%; margin: 0 2px; animation: bounce .9s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: .15s; }
+    .typing-dot:nth-child(3) { animation-delay: .3s; }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+    /* Input area */
+    #input-area {
+      padding: 12px 20px 16px; border-top: 1px solid var(--border);
+      background: var(--surface); flex-shrink: 0;
+    }
+    .input-row { display: flex; gap: 8px; }
+    #user-input {
+      flex: 1; padding: 10px 14px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+      font-size: 0.9rem; resize: none; min-height: 44px; max-height: 150px;
+      font-family: inherit; line-height: 1.5;
+    }
+    #user-input:focus { outline: none; border-color: var(--accent); }
+    #send-btn {
+      padding: 10px 18px; background: var(--accent); color: #fff;
+      border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+      font-weight: 600; transition: opacity .15s; flex-shrink: 0;
+    }
+    #send-btn:hover { opacity: .88; }
+    #send-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .input-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 8px; font-size: 0.75rem; color: var(--text3);
+    }
+    #new-session-btn {
+      background: none; border: none; color: var(--text3); cursor: pointer;
+      font-size: 0.75rem; text-decoration: underline;
+    }
+    #new-session-btn:hover { color: var(--text2); }
+
+    /* Welcome / empty state */
+    .welcome-msg {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px 24px; color: var(--text2);
+      font-size: 0.9rem; line-height: 1.65; max-width: 640px;
+    }
+    .welcome-msg strong { color: var(--text); }
+
+    /* Mobile */
+    @media (max-width: 680px) {
+      #hamburger { display: block; }
+      #sidebar {
+        position: fixed; left: 0; top: 0; height: 100vh; z-index: 100;
+        transform: translateX(-100%); width: var(--sidebar-w) !important;
+      }
+      #sidebar.mobile-open { transform: translateX(0); }
+      #sidebar-overlay {
+        display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99;
+      }
+      #sidebar-overlay.visible { display: block; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- API Key Entry Screen -->
+<div id="key-screen">
+  <div class="key-card">
+    <h1>ZDK Training Assistant</h1>
+    <p>Enter your Anthropic API key to start. Your key is sent directly to the Anthropic API and never stored on any server.</p>
+    <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" />
+    <label class="remember-row">
+      <input type="checkbox" id="remember-key"> Remember key in this browser (localStorage)
+    </label>
+    <button class="btn-primary" id="start-btn">Start Learning</button>
+    <p class="key-note">
+      Keys are per-student — each student uses their own key. Estimated cost: $0.05–0.20 per full tutorial session.
+      Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>.
+    </p>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app">
+  <div id="sidebar-overlay"></div>
+
+  <nav id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">ZDK Tutorials</span>
+      <button class="sidebar-key-btn" id="change-key-btn">Change Key</button>
+    </div>
+    <div class="sidebar-nav" id="sidebar-nav"></div>
+  </nav>
+
+  <div id="main">
+    <div class="top-bar">
+      <button id="hamburger">☰</button>
+      <span id="step-title">Select a step</span>
+      <a id="doc-link" href="#" target="_blank">Docs ↗</a>
+      <button id="mark-done-btn">Mark complete</button>
+    </div>
+    <div id="quick-prompts"></div>
+    <div id="messages"></div>
+    <div id="input-area">
+      <div class="input-row">
+        <textarea id="user-input" placeholder="Ask a question…" rows="1"></textarea>
+        <button id="send-btn">Send</button>
+      </div>
+      <div class="input-footer">
+        <span id="status-text"></span>
+        <button id="new-session-btn">New session</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Step Definitions ─────────────────────────────────────────────────────────
+
+const INSTRUCTOR_BASE = `You are an expert ZDK (ZenPack Development Kit) instructor for Zenoss. Your students are Zenoss customers learning to build custom ZenPacks. They are working through hands-on tutorials on their own Zenoss development server.
+
+Your style:
+- Conversational and encouraging — you replace a live instructor
+- When a student hits an error, ask them to share the exact error message before guessing the cause
+- Short direct answers for simple questions; detailed explanations for concepts
+- Always show real commands and code rather than abstractions
+- Connect new concepts to things already covered in earlier steps
+- Never lecture unprompted — respond to what the student actually asks
+
+Key reminders students often need:
+- YAML indentation matters — use spaces, never tabs
+- After Python class changes, restart Zope (serviced service restart Zope)
+- After modeler or datasource plugin changes, restart zenhub too
+- Export the ZenPack after each meaningful change (Advanced > ZenPacks > Export)
+- Use zendmd to inspect the live object model interactively
+- Use snmpwalk to verify OIDs — don't trust MIB docs alone`;
+
+const STEPS = [
+  // ── SNMP Track ──
+  {
+    track: 'SNMP Tutorial',
+    id: 'snmp-overview',
+    label: 'Overview',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/monitoring-an-snmp-device/',
+    greeting: "Welcome to the SNMP tutorial! We'll build a ZenPack to monitor a NetBotz environmental sensor — it measures temperature, humidity, dew point, audio levels, and airflow. By the end you'll have monitoring, modeling, component relationships, and SNMP trap handling all working. What questions do you have before we dive into the tools?",
+    quickPrompts: ['What is a ZenPack?', 'What is the ZDK?', 'What will I build in this tutorial?', 'What do I need installed?'],
+    context: `CURRENT LESSON: SNMP Tutorial Overview
+
+This tutorial builds a ZenPack to monitor a NetBotz environmental sensor device using SNMP. The NetBotz monitors temperature, humidity, dew point, audio levels, and air flow.
+
+Tutorial structure (6 steps):
+1. SNMP Tools — install and use snmpwalk, snmptranslate, snmpsim
+2. Device Monitoring — create a ZenPack, device class, SNMP monitoring templates
+3. Device Modeling — create a Device subclass, modeler plugin, customize device overview
+4. Component Modeling — define component types, relationships between device and components
+5. Component Monitoring — monitoring templates scoped to components
+6. SNMP Traps — import MIBs, simulate traps, map events
+
+Key concepts:
+- A ZenPack is a plugin that extends Zenoss Collection Zone/Resource Manager
+- zenpack.yaml is the central config file — classes, relationships, templates all go here
+- The ZDK provides zenpacklib: a Python library + YAML schema for declaring ZenPack structure
+- You work as the zenoss user inside a dev container/VM
+- All examples use ZenPacks.training.NetBotz as the ZenPack name`
+  },
+  {
+    track: 'SNMP Tutorial',
+    id: 'snmp-tools',
+    label: 'Step 1: SNMP Tools',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/tools/',
+    greeting: "Let's set up the SNMP tools you'll need throughout this tutorial. These let you inspect device MIBs and OIDs directly from the command line — which is essential before you can write any monitoring templates. Ready to install them?",
+    quickPrompts: ['What is snmpwalk?', 'How do I translate an OID?', 'What is snmpsim for?', 'Walk me through snmp.conf'],
+    context: `CURRENT LESSON: SNMP Tools
+
+Goal: Install and learn to use the CLI tools needed to work with SNMP devices.
+
+Install net-snmp utilities:
+  yum -y install net-snmp-utils
+  yum -y install libsmi   # for smidump (MIB conversion)
+
+Install SNMP Simulator (to fake a device during testing):
+  yum -y groupinstall "Development Tools"
+  yum -y install python-devel
+  easy_install snmpsim
+  mkdir -p /usr/share/snmpsim/data
+  mkdir -p /var/run/snmpsim
+  useradd -U snmpsim
+  chown snmpsim:snmpsim /var/run/snmpsim
+
+Key commands:
+  snmpwalk -v2c -c public <ip> <branch>
+    — walks SNMP tree from a branch OID, returns all child OIDs and values
+    — example: snmpwalk -v2c -c public 172.17.0.1 NETBOTZV2-MIB::netBotzSensorTable
+
+  snmptranslate .1.3.6.1.4.1.5528.100.20.10.2006
+    — converts numeric OID to human-readable name
+  snmptranslate -On NETBOTZV2-MIB::netBotz420ERack
+    — converts name to numeric OID (-On flag = output numeric)
+
+  smidump -f python NETBOTZV2-MIB.mib
+    — dumps MIB file contents in Python format, useful for exploring structure
+
+Create /etc/snmp/snmp.conf to set defaults:
+  defVersion v2c
+  defCommunity public
+  mibs ALL
+  — after this, you can drop -v2c -c public from every command
+
+Common gotchas:
+  - OIDs at device level (scalar) end in .0 (e.g. 1.3.6.1.2.1.1.1.0)
+  - snmpwalk returns the index appended to the OID — use snmptranslate to get the base
+  - Always verify OIDs with snmpwalk against the real device; MIB docs can be wrong`
+  },
+  {
+    track: 'SNMP Tutorial',
+    id: 'snmp-device-monitoring',
+    label: 'Step 2: Device Monitoring',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/device-monitoring/',
+    greeting: "Time to create the ZenPack and build your first monitoring template. We'll collect device-level SNMP metrics — things like total SNMP requests — and graph them. This is the foundation everything else builds on.",
+    quickPrompts: ['How do I create a ZenPack?', 'How do I add a device to monitor?', 'What is a monitoring template?', 'How do I set up a datasource?', 'How do I test collection?'],
+    context: `CURRENT LESSON: Device Monitoring
+
+Goal: Create the ZenPack, a device class, and a monitoring template with SNMP datasource, threshold, and graph.
+
+1. Create and install the ZenPack (run as zenoss user):
+   zenpacklib --create ZenPacks.training.NetBotz
+   zenpack --link --install ZenPacks.training.NetBotz
+   serviced service restart Zope
+
+2. Create a device class /NetBotz in the Zenoss UI (Infrastructure view).
+   Configure it:
+   - Modeler Plugins: remove zenoss.snmp.RouteMap (not needed for NetBotz)
+   - zSnmpMonitorIgnore: false (ensure SNMP monitoring is enabled)
+   - Set values LOCALLY on the device class to avoid changing global defaults
+
+3. Add a device to the class:
+   zendisc run --deviceclass=/NetBotz --device=172.17.0.1
+
+4. Create a monitoring template named "Device" under /NetBotz:
+
+   SNMP Datasource:
+   - Name: snmpInTotalReqVars  (name after the MIB OID)
+   - Type: SNMP
+   - OID: 1.3.6.1.2.1.11.9.0  (trailing .0 = device-level scalar)
+   - Always use snmpwalk to verify the exact OID
+
+   Datapoint:
+   - For counter values: set RRD Type to DERIVE, RRD Minimum to 0
+   - DERIVE handles device reboots (counters reset to 0) correctly
+
+   Threshold (MinMaxThreshold):
+   - Set max value, assign to an event class
+
+   Graph Definition:
+   - Include units, axis labels, descriptive graph point names
+
+5. Test collection:
+   zenperfsnmp run -v10 --device=Netbotz01 | grep "MetricWriter"
+
+6. Export the ZenPack:
+   Advanced > ZenPacks > select ZenPacks.training.NetBotz > Export ZenPack
+   This writes objects.xml into the ZenPack directory.
+
+Common gotchas:
+  - Device-level (scalar) OIDs MUST end in .0
+  - Use DERIVE not COUNTER for reset-safe counters
+  - Set properties locally on the device class, not globally
+  - Export after every meaningful change`
+  },
+  {
+    track: 'SNMP Tutorial',
+    id: 'snmp-device-modeling',
+    label: 'Step 3: Device Modeling',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/device-modeling/',
+    greeting: "Now we'll go beyond simple monitoring and actually model the device — adding custom attributes. We'll create a NetBotzDevice subclass with a temp_sensor_count property and write a modeler plugin that populates it via SNMP.",
+    quickPrompts: ['What is device modeling?', 'How do I create a Device subclass?', 'How do I write an SNMP modeler plugin?', 'How do I test the modeler?', 'How do I show custom fields on the overview page?'],
+    context: `CURRENT LESSON: Device Modeling
+
+Goal: Create a custom Device subclass (NetBotzDevice) with a temp_sensor_count property, and a modeler plugin that reads it via SNMP.
+
+1. Update zenpack.yaml — add a Device subclass:
+   classes:
+     NetBotzDevice:
+       base: [zenpacklib.Device]
+       properties:
+         temp_sensor_count:
+           type: int
+           label: "# Temperature Sensors"
+
+2. Configure the device class to use the new Python class:
+   - In the /NetBotz device class, set: zPythonClass: ZenPacks.training.NetBotz.NetBotzDevice
+   - Important: zPythonClass is only applied when a device is CREATED in a class or MOVED into one
+
+3. Reinstall and restart:
+   zenpack --link --install ZenPacks.training.NetBotz
+   serviced service restart Zope
+
+4. Reset existing device's Python class if needed:
+   zendmd
+   > d = find('Netbotz01')
+   > d.__class__ = d.zPythonClass()  # or rebuild manually
+   > commit()
+
+5. Find the temperature sensor table OID using smidump and snmpwalk:
+   snmpwalk 172.17.0.1 NETBOTZV2-MIB::tempSensorTable
+   — The tempSensorTable is at OID 1.3.6.1.4.1.5528.100.4.1.1.1
+   — Count the rows returned; the NetBotz has 14 sensors
+
+6. Create the modeler plugin at $ZP_DIR/modeler/plugins/training/snmp/NetBotz.py:
+   from Products.DataCollector.plugins.CollectorPlugin import SnmpPlugin, GetTableMap
+   from Products.DataCollector.plugins.DataMaps import ObjectMap
+
+   class NetBotz(SnmpPlugin):
+       snmpGetTableMaps = (
+           GetTableMap('tempSensorTable', '1.3.6.1.4.1.5528.100.4.1.1.1', {'.1': 'tempSensorId'}),
+       )
+
+       def process(self, device, results, log):
+           temp_sensors, _ = results.get('tempSensorTable', ({}, None))
+           return ObjectMap({'temp_sensor_count': len(temp_sensors)})
+
+   The process method can return:
+   - None (no changes)
+   - ObjectMap (apply to device)
+   - RelationshipMap (apply to a relationship)
+   - A list of the above
+
+7. Register the plugin in zenpack.yaml device_classes section:
+   device_classes:
+     /NetBotz:
+       zProperties:
+         zCollectorPlugins: [zenoss.snmp.DeviceMap, zenoss.snmp.InterfaceMap, training.snmp.NetBotz]
+
+8. Test:
+   zenmodeler run --device=Netbotz01
+   zendmd
+   > d = find('Netbotz01')
+   > d.temp_sensor_count  # should return 14
+
+9. Customize device overview (optional):
+   Create $ZP_DIR/resources/device.js using ExtJS to add/remove fields from the overview panel.
+
+Common gotchas:
+  - Modeler plugin file path must match class name exactly (NetBotz.py → class NetBotz)
+  - Must restart Zope AND zenhub after plugin changes
+  - Always call zenmodeler after model changes to repopulate data`
+  },
+  {
+    track: 'SNMP Tutorial',
+    id: 'snmp-component-modeling',
+    label: 'Step 4: Component Modeling',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/component-modeling/',
+    greeting: "Here's where the model gets richer — we'll define temperature sensors as components with their own properties, and establish the relationship between the NetBotzDevice and its sensors. This is the pattern you'll use for anything that has multiple instances (interfaces, disks, sensors, etc.).",
+    quickPrompts: ['What is a component?', 'How do I define a 1:MC relationship?', 'How do I write a RelationshipMap?', 'What is buildRelations()?', 'How do I test component modeling?'],
+    context: `CURRENT LESSON: Component Modeling
+
+Goal: Define NetBotzTemperatureSensor as a component class, relate it to NetBotzDevice (1:MC), and update the modeler to discover sensor instances.
+
+1. Update zenpack.yaml — add the component class:
+   classes:
+     NetBotzDevice:
+       base: [zenpacklib.Device]
+       properties:
+         temp_sensor_count:
+           type: int
+
+     NetBotzTemperatureSensor:
+       base: [zenpacklib.Component]
+       properties:
+         enclosure:
+           label: Enclosure
+         port:
+           label: Port
+
+   class_relationships:
+     - NetBotzDevice 1:MC NetBotzTemperatureSensor
+   — "1:MC" = one device can contain MANY components (the most common relationship type)
+   — The relname on the component side is automatically pluralized (netBotzTemperatureSensors)
+
+2. Reinstall:
+   zenpack --link --install ZenPacks.training.NetBotz
+   serviced service restart Zope
+
+3. Rebuild relationships on existing devices:
+   zendmd
+   > d = find('Netbotz01')
+   > d.buildRelations()
+   > commit()
+
+4. Available SNMP OIDs for sensors (from smidump/snmpwalk):
+   tempSensorId      — unique sensor identifier
+   tempSensorValue   — raw integer temperature
+   tempSensorLabel   — human-readable name
+   tempSensorEncId   — enclosure ID
+   tempSensorPortId  — port ID
+
+5. Update the modeler plugin to return a RelationshipMap:
+   from Products.DataCollector.plugins.DataMaps import ObjectMap, RelationshipMap
+
+   class NetBotz(SnmpPlugin):
+       relname = 'netBotzTemperatureSensors'
+       modname = 'ZenPacks.training.NetBotz.NetBotzTemperatureSensor'
+
+       snmpGetTableMaps = (
+           GetTableMap('tempSensorTable',
+               '1.3.6.1.4.1.5528.100.4.1.1.1',
+               {'.1': 'tempSensorId', '.3': 'tempSensorLabel',
+                '.5': 'tempSensorEncId', '.6': 'tempSensorPortId'}),
+       )
+
+       def process(self, device, results, log):
+           temp_sensors, _ = results.get('tempSensorTable', ({}, None))
+           rm = self.relMap()
+           for idx, row in temp_sensors.items():
+               rm.append(self.objectMap({
+                   'id': self.prepId(row.get('tempSensorId', idx)),
+                   'title': row.get('tempSensorLabel', ''),
+                   'enclosure': row.get('tempSensorEncId', ''),
+                   'port': row.get('tempSensorPortId', ''),
+               }))
+           return [ObjectMap({'temp_sensor_count': len(rm.maps)}), rm]
+
+6. Test:
+   zenmodeler run --device=Netbotz01
+   zendmd
+   > d = find('Netbotz01')
+   > list(d.netBotzTemperatureSensors())  # should show 14 sensors
+
+Common gotchas:
+  - relname must exactly match the relationship name (auto-pluralized camelCase)
+  - modname must be the full dotted Python class path
+  - Must call buildRelations() on existing devices after adding new relationships
+  - Use self.prepId() to sanitize component IDs (removes special chars)`
+  },
+  {
+    track: 'SNMP Tutorial',
+    id: 'snmp-component-monitoring',
+    label: 'Step 5: Component Monitoring',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/component-monitoring/',
+    greeting: "Now we add monitoring to each individual temperature sensor component. The key here is template naming — get it wrong and Zenoss won't bind the template to your components.",
+    quickPrompts: ['How does template naming work for components?', 'What OID do I use for temperature?', 'How do I add a threshold for overtemperature?', 'How do I verify the template is bound?'],
+    context: `CURRENT LESSON: Component Monitoring
+
+Goal: Add a monitoring template for NetBotzTemperatureSensor components that graphs temperature and triggers alerts.
+
+1. Find the temperature OID:
+   snmpwalk 172.17.0.1 NETBOTZV2-MIB::tempSensorValueStr
+   snmptranslate -On NETBOTZV2-MIB::tempSensorValueStr
+   → Base OID: 1.3.6.1.4.1.5528.100.4.1.1.1.7
+   — tempSensorValueStr returns temperature as a string in Celsius
+
+2. CRITICAL: Template naming for components:
+   - Template must be named after the component class LABEL with spaces removed
+   - NetBotzTemperatureSensor class label = "Temperature Sensor"
+   - Template name = "TemperatureSensor" (no space)
+   - Or set explicitly in zenpack.yaml under the class definition
+
+3. Create the monitoring template via UI (or add to zenpack.yaml):
+
+   Datasource:
+   - Name: tempSensorValueStr
+   - Type: SNMP
+   - OID: 1.3.6.1.4.1.5528.100.4.1.1.1.7
+   — Zenoss automatically appends the component SNMP index
+
+   Datapoint:
+   - tempSensorValueStr (auto-created with datasource)
+   - RRD Type: GAUGE (temperature is not a counter)
+
+   Threshold:
+   - Type: MinMaxThreshold
+   - Maximum: 32 (degrees C)
+   - Event Class: /Environ
+   - Severity: Error
+
+   Graph:
+   - Name: Temperature
+   - Units: degrees C
+   - Graph Point: tempSensorValueStr with format %7.2lf
+
+4. Test:
+   zenperfsnmp run -v10 --device=Netbotz01 | grep "MetricWriter"
+   — Should show temperature values being collected for each sensor
+
+5. Verify in UI:
+   - Navigate to the device > Components > Temperature Sensors
+   - Click a sensor — check Graphs tab
+   - Events tab should show threshold breaches if temp > 32°C
+
+Common gotchas:
+  - Template name case matters — must match label exactly (spaces removed)
+  - SNMP index is appended automatically for component datasources
+  - Temperature from tempSensorValueStr includes unit string — may need parsing
+  - Don't forget to export the ZenPack after template configuration`
+  },
+  {
+    track: 'SNMP Tutorial',
+    id: 'snmp-traps',
+    label: 'Step 6: SNMP Traps',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/traps/',
+    greeting: "Last step of the SNMP tutorial — SNMP traps. Instead of Zenoss polling the device, the device pushes notifications to Zenoss. We'll import the MIB, simulate a trap, and map it to a meaningful event class.",
+    quickPrompts: ['How do I import a MIB?', 'How do I simulate an SNMP trap?', 'What is zentrap?', 'How do event mappings work?', 'How do I add a transform?'],
+    context: `CURRENT LESSON: SNMP Traps
+
+Goal: Import the NETBOTZV2-MIB, simulate temperature traps, and map them to Zenoss events with proper classification.
+
+Prerequisites:
+  - zentrap daemon must be running and listening on port 162/udp
+  - MIBs must be imported before traps can be decoded (otherwise you see raw OIDs)
+
+1. Copy MIB file into the container:
+   cp NETBOTZV2-MIB.mib /z/
+
+2. Import the MIB:
+   zenmib run --keepMiddleZeros NETBOTZV2-MIB.mib
+   — --keepMiddleZeros preserves internal zeros in OIDs (required for some MIBs)
+
+3. Add MIB to ZenPack via UI:
+   Advanced > ZenPacks > ZenPacks.training.NetBotz > Add MIB
+   — Bundles the MIB so it's installed with the ZenPack
+
+4. Simulate a simple trap:
+   sudo snmptrap 172.17.0.29 0 NETBOTZV2-MIB::netBotzTempTooHigh
+
+5. Simulate a trap with variable bindings (VarBinds):
+   sudo snmptrap 172.17.0.29 0 NETBOTZV2-MIB::netBotzTempTooHigh \
+       NETBOTZV2-MIB::netBotzV2TrapSensorID s 'nbHawkEnc_1_TEMP1'
+   — Variable bindings attach context data to the trap (sensor ID, temperature, etc.)
+
+6. Check the event in Zenoss Events console.
+   Before MIB import: events show raw numeric OIDs
+   After MIB import: events show human-readable trap names
+
+7. Map the event to an event class:
+   - In Events console, find the trap event
+   - Click the reclassification button
+   - Assign to an appropriate class (e.g., /Environ/Temp)
+
+8. Add a transform to enrich event data:
+   In the event class mapping, add a transform:
+   evt.component = getattr(evt, 'netBotzV2TrapSensorID', '')
+   — This sets the event's component field from the trap's variable binding
+
+9. Add event class mappings to zenpack.yaml:
+   event_classes:
+     /Environ/Temp/TooHigh:
+       remove: false
+       mappings:
+         netBotzTempTooHigh:
+           eventClassKey: netBotzTempTooHigh
+           sequence: 10
+           transform: |
+             evt.component = getattr(evt, 'netBotzV2TrapSensorID', '')
+
+Common gotchas:
+  - zentrap must be running — check with: serviced service status zentrap
+  - zentrap listens on 162/udp — may need sudo for snmptrap
+  - Import MIB BEFORE simulating traps, or events won't decode
+  - Variable binding attribute names on evt object use the MIB OID name (camelCase)`
+  },
+
+  // ── HTTP Track ──
+  {
+    track: 'HTTP Tutorial',
+    id: 'http-overview',
+    label: 'Overview',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/monitoring-an-http-api/',
+    greeting: "Welcome to the HTTP API tutorial! We'll build a ZenPack that monitors the National Weather Service API — collecting weather alerts as events and temperature/humidity/pressure as datapoints. This track covers Python modeler plugins and the PythonCollector framework, which is how you monitor any non-SNMP data source.",
+    quickPrompts: ['How is this different from SNMP monitoring?', 'What is PythonCollector?', 'What will I build in this tutorial?', 'Do I need the SNMP tutorial first?'],
+    context: `CURRENT LESSON: HTTP Tutorial Overview
+
+This tutorial builds a ZenPack that monitors the National Weather Service (NWS) public API — no authentication required.
+
+The ZenPack will:
+- Model weather stations as components (NwsStation objects on an NwsDevice)
+- Collect active weather ALERTS as Zenoss events
+- Collect weather OBSERVATIONS (temperature, humidity, pressure, wind) as datapoints/graphs
+
+Tutorial structure (7 steps):
+1. NWS API — understand the API endpoints and response structure
+2. Create ZenPack — zenpacklib --create, zenpack.yaml with classes and relationships
+3. Modeler Plugin — PythonPlugin with async HTTP collection
+4. Add Device Class — zenpack.yaml device_classes config
+5. Datasource (Events) — PythonCollector plugin that generates events
+6. Datasource (Data Points) — plugin that collects numeric metrics
+7. Datasource (Modeling) — plugin that updates the model during collection
+
+Key differences from SNMP:
+- Uses PythonPlugin (not SnmpPlugin) for modeling
+- Uses PythonDataSourcePlugin for monitoring
+- Data is fetched via HTTP instead of SNMP
+- Requires PythonCollector ZenPack as a dependency
+- Collection runs in the zenpython service (not zenperfsnmp)
+
+ZenPack name: ZenPacks.training.NWS`
+  },
+  {
+    track: 'HTTP Tutorial',
+    id: 'http-nws-api',
+    label: 'Step 1: NWS API',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/nws-api/',
+    greeting: "Before building anything, let's understand the API we'll be monitoring. The National Weather Service API is public and free — no key required. Understanding the response structure now will make writing the modeler and datasource plugins much easier.",
+    quickPrompts: ['What endpoints does the NWS API expose?', 'What does the stations response look like?', 'How do I get weather alerts?', 'How do I get observations?', 'What is GeoJSON?'],
+    context: `CURRENT LESSON: NWS API
+
+Base URL: https://api.weather.gov
+No authentication required. All responses are GeoJSON format.
+
+Key Endpoints:
+
+1. List stations by state:
+   GET https://api.weather.gov/stations?state=OK,TX
+   Response: GeoJSON FeatureCollection
+   Each feature.properties contains:
+   - stationIdentifier (e.g. "KTUL")
+   - name (human-readable station name)
+   - elevation
+   - timeZone
+
+2. Station details:
+   GET https://api.weather.gov/stations/KTUL
+   Response: GeoJSON Feature
+   feature.properties contains county, forecast zone, fire weather zone
+
+3. Active alerts by county/zone:
+   GET https://api.weather.gov/alerts/active?zone=OKC143
+   Response: FeatureCollection of alerts
+   Each alert has: event, severity, effective, expires, description
+   — These become Zenoss events
+
+4. Latest observations:
+   GET https://api.weather.gov/stations/KDFW/observations/latest
+   Response: GeoJSON Feature
+   feature.properties contains numeric readings:
+   - temperature.value (Celsius)
+   - dewpoint.value
+   - barometricPressure.value (Pascals)
+   - visibility.value (meters)
+   - relativeHumidity.value (%)
+   - windSpeed.value (km/h)
+   - windDirection.value (degrees)
+   — These become datapoints for graphing
+
+Response structure pattern:
+  All responses: { "@context": ..., "type": "Feature/FeatureCollection", "properties": {...}, "geometry": {...} }
+  For collections: response.features is an array, each with .properties
+  For single items: response.properties is the data object
+
+zNwsStates property:
+  A lines-type zProperty will hold the states to monitor (e.g. ["TX", "OK"])
+  The modeler iterates these states to discover stations`
+  },
+  {
+    track: 'HTTP Tutorial',
+    id: 'http-create-zenpack',
+    label: 'Step 2: Create ZenPack',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/create-zenpack/',
+    greeting: "Let's create the ZenPacks.training.NWS ZenPack and write the zenpack.yaml that defines our device class, component class, and their relationship. This is the skeleton everything else plugs into.",
+    quickPrompts: ['What goes in zenpack.yaml?', 'How do I define zProperties?', 'What is the 1:MC relationship for?', 'How do I install in development mode?'],
+    context: `CURRENT LESSON: Create the NWS ZenPack
+
+1. Create the ZenPack:
+   cd /z
+   zenpacklib --create ZenPacks.training.NWS
+
+   Set environment variables:
+   export ZP_TOP_DIR=/z/ZenPacks.training.NWS
+   export ZP_DIR=$ZP_TOP_DIR/ZenPacks/training/NWS
+
+2. Complete zenpack.yaml:
+
+   name: ZenPacks.training.NWS
+
+   zProperties:
+     DEFAULTS:
+       category: NWS
+     zNwsStates:
+       type: lines
+       default_value:
+         - TX
+         - OK
+
+   classes:
+     NwsDevice:
+       base: [zenpacklib.Device]
+
+     NwsStation:
+       base: [zenpacklib.Component]
+       properties:
+         DEFAULTS:
+           type: string
+         country_code:
+           label: Country Code
+         timezone:
+           label: Timezone
+         nws_zone:
+           label: NWS Zone
+         county:
+           label: County
+         latitude:
+           label: Latitude
+           type: float
+         longitude:
+           label: Longitude
+           type: float
+
+   class_relationships:
+     - NwsDevice 1:MC NwsStation
+
+3. Install in development mode:
+   zenpack --link --install $ZP_TOP_DIR
+   serviced service restart Zope
+
+Key concepts:
+  - DEFAULTS block in zProperties applies to all zProperties in that section
+  - "lines" type = list of strings (one per line in UI)
+  - 1:MC relationship: one NwsDevice has many NwsStation components
+  - --link flag = developer mode (code changes take effect without reinstall for Python files)
+  - zenpack.yaml changes still require reinstall`
+  },
+  {
+    track: 'HTTP Tutorial',
+    id: 'http-modeler-plugin',
+    label: 'Step 3: Modeler Plugin',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/create-modeler-plugin/',
+    greeting: "Now we write the modeler plugin that discovers weather stations from the NWS API and creates NwsStation components. This uses PythonPlugin and Twisted's async patterns — slightly different from the SNMP modeler you may have seen.",
+    quickPrompts: ['What is PythonPlugin vs SnmpPlugin?', 'How does @inlineCallbacks work?', 'What does the collect method do?', 'What does the process method do?', 'How do I restart after plugin changes?'],
+    context: `CURRENT LESSON: Modeler Plugin (HTTP/Python)
+
+Goal: Create a Python modeler plugin that queries the NWS API to discover weather stations.
+
+1. Create directory structure:
+   mkdir -p $ZP_DIR/modeler/plugins/NWS
+   touch $ZP_DIR/modeler/__init__.py
+   touch $ZP_DIR/modeler/plugins/__init__.py
+   touch $ZP_DIR/modeler/plugins/NWS/__init__.py
+
+2. Create $ZP_DIR/modeler/plugins/NWS/Stations.py:
+
+   import json
+   from twisted.internet.defer import inlineCallbacks, returnValue, DeferredList
+   from twisted.web.client import getPage
+   from Products.DataCollector.plugins.CollectorPlugin import PythonPlugin
+   from Products.DataCollector.plugins.DataMaps import ObjectMap, RelationshipMap
+
+   class Stations(PythonPlugin):
+       relname = 'nwsStations'
+       modname = 'ZenPacks.training.NWS.NwsStation'
+       requiredProperties = ('zNwsStates',)
+
+       @inlineCallbacks
+       def collect(self, device, log):
+           states = getattr(device, 'zNwsStates', ['TX'])
+           url = 'https://api.weather.gov/stations?state={}'.format(','.join(states))
+           response = yield getPage(url.encode(), headers={'Accept': 'application/geo+json'})
+           data = json.loads(response)
+
+           station_urls = [
+               'https://api.weather.gov/stations/{}'.format(
+                   f['properties']['stationIdentifier'])
+               for f in data.get('features', [])
+           ]
+
+           details = yield DeferredList(
+               [getPage(u.encode(), headers={'Accept': 'application/geo+json'})
+                for u in station_urls],
+               consumeErrors=True
+           )
+           returnValue((data['features'], details))
+
+       def process(self, device, results, log):
+           stations, details = results
+           rm = self.relMap()
+           for feature, (ok, detail_response) in zip(stations, details):
+               if not ok:
+                   continue
+               props = feature['properties']
+               detail = json.loads(detail_response)['properties']
+               geo = feature.get('geometry', {}).get('coordinates', [None, None])
+               rm.append(self.objectMap({
+                   'id': self.prepId(props['stationIdentifier']),
+                   'title': props.get('name', props['stationIdentifier']),
+                   'longitude': geo[0],
+                   'latitude': geo[1],
+                   'timezone': props.get('timeZone', ''),
+                   'county': detail.get('county', '').split('/')[-1],
+                   'nws_zone': detail.get('forecast', '').split('/')[-1],
+               }))
+           return rm
+
+3. Restart after creating the plugin:
+   serviced service restart zope
+   serviced service restart zenhub
+
+4. Run the modeler:
+   zenmodeler run --device=api.weather.gov
+
+Common gotchas:
+  - Class name MUST match filename (Stations.py → class Stations)
+  - getPage takes bytes in Python 2 (encode the URL)
+  - DeferredList returns list of (success_bool, result) tuples
+  - Must restart BOTH zope and zenhub after modeler plugin changes
+  - requiredProperties makes zNwsStates available on the device object in collect()`
+  },
+  {
+    track: 'HTTP Tutorial',
+    id: 'http-add-device',
+    label: 'Step 4: Add Device Class',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/add-device/',
+    greeting: "With the modeler written, let's wire up the device class in zenpack.yaml and add the actual device. This configures what monitoring and modeler plugins apply to /NWS devices.",
+    quickPrompts: ['What goes in device_classes in zenpack.yaml?', 'Why disable ping and SNMP?', 'How do I add the device?', 'What does zendisc do?'],
+    context: `CURRENT LESSON: Add Device Class
+
+Goal: Configure the /NWS device class in zenpack.yaml and add api.weather.gov as a device.
+
+1. Add device_classes section to zenpack.yaml:
+
+   device_classes:
+     /NWS:
+       zProperties:
+         zPythonClass: ZenPacks.training.NWS.NwsDevice
+         zPingMonitorIgnore: true
+         zSnmpMonitorIgnore: true
+         zCollectorPlugins:
+           - NWS.Stations
+
+   Explanation:
+   - zPythonClass: use our custom NwsDevice class
+   - zPingMonitorIgnore: true — don't ping api.weather.gov (irrelevant for HTTP API)
+   - zSnmpMonitorIgnore: true — no SNMP for HTTP devices
+   - zCollectorPlugins: only use our NWS.Stations modeler
+
+2. Reinstall to apply:
+   zenpack --link --install $ZP_TOP_DIR
+   serviced service restart Zope
+
+3. Add the device:
+   zendisc run --deviceclass=/NWS --device=api.weather.gov
+
+4. Verify stations were modeled:
+   zendmd
+   > d = find('api.weather.gov')
+   > list(d.nwsStations())  # should list discovered stations
+
+Common gotchas:
+  - After zenpack.yaml changes, must reinstall (--link --install) and restart Zope
+  - zCollectorPlugins replaces the default list — include any other plugins you want
+  - zendisc is the simplest way to add devices from CLI; limited options vs UI
+  - The device address (api.weather.gov) becomes the device ID in Zenoss`
+  },
+  {
+    track: 'HTTP Tutorial',
+    id: 'http-plugin-events',
+    label: 'Step 5: Datasource (Events)',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/plugin-events/',
+    greeting: "Now we write the first datasource plugin — it watches for weather alerts and generates Zenoss events when severe weather is active. This introduces PythonCollector and the PythonDataSourcePlugin pattern.",
+    quickPrompts: ['What is PythonCollector?', 'What are config_key and params for?', 'How do I create a Zenoss event?', 'What event fields are required?', 'How do I test event collection?'],
+    context: `CURRENT LESSON: Datasource Plugin — Events
+
+Goal: Create a PythonDataSourcePlugin that fetches NWS weather alerts and generates Zenoss events.
+
+Prerequisites:
+  - PythonCollector ZenPack must be installed
+  - Add it as a dependency in setup.py:
+    install_requires=['ZenPacks.zenoss.PythonCollector']
+
+1. Create $ZP_DIR/dsplugins.py:
+
+   import json
+   from twisted.internet.defer import inlineCallbacks, returnValue
+   from twisted.web.client import getPage
+   from ZenPacks.zenoss.PythonCollector.datasources.PythonDataSource import PythonDataSourcePlugin
+
+   class Alerts(PythonDataSourcePlugin):
+       @classmethod
+       def config_key(cls, datasource, context):
+           return (context.device().id, datasource.getCycleTime(context),
+                   datasource.plugin_classname, context.county)
+
+       @classmethod
+       def params(cls, datasource, context):
+           return {'county': context.county, 'title': context.title()}
+
+       @inlineCallbacks
+       def collect(self, config):
+           data = self.new_data()
+           for datasource in config.datasources:
+               county = datasource.params.get('county', '')
+               if not county:
+                   continue
+               url = 'https://api.weather.gov/alerts/active?zone={}'.format(county)
+               try:
+                   response = yield getPage(url.encode(), headers={'Accept': 'application/geo+json'})
+                   alerts = json.loads(response)
+                   for alert in alerts.get('features', []):
+                       props = alert['properties']
+                       data['events'].append({
+                           'device': config.id,
+                           'component': datasource.component,
+                           'severity': 3,  # Error
+                           'eventKey': props.get('id', ''),
+                           'eventClassKey': 'NwsAlert',
+                           'summary': props.get('event', 'Weather Alert'),
+                           'message': props.get('description', ''),
+                       })
+               except Exception as e:
+                   log.warning('Failed to collect alerts for %s: %s', county, e)
+           returnValue(data)
+
+2. Add datasource template to zenpack.yaml:
+
+   device_classes:
+     /NWS:
+       templates:
+         Station:
+           targetPythonClass: ZenPacks.training.NWS.NwsStation
+           datasources:
+             alerts:
+               type: Python
+               plugin_classname: ZenPacks.training.NWS.dsplugins.Alerts
+               cycletime: "600"
+
+3. Reinstall and restart:
+   zenpack --link --install $ZP_TOP_DIR
+   serviced service restart zenhub
+
+4. Test:
+   zenpython run -v10 --device=api.weather.gov
+
+Event fields:
+  Required: device (str), severity (0-5), summary (str, max 128 chars)
+  Deduplication: eventKey (same key = same event, gets de-duped)
+  Classification: eventClassKey (matched against event class mappings)
+  Optional: component, message, any custom fields
+
+Severity levels: 0=Clear, 1=Debug, 2=Info, 3=Warning, 4=Error, 5=Critical
+
+Common gotchas:
+  - config_key() controls how collection tasks are split — return values that uniquely identify the work
+  - params() runs with database access; collect() does not — use params() to pass DB data
+  - Must restart zenhub (not just zope) after dsplugins.py changes
+  - data = self.new_data() initializes {'events': [], 'values': {}, 'maps': []}`
+  },
+  {
+    track: 'HTTP Tutorial',
+    id: 'http-plugin-datapoints',
+    label: 'Step 6: Datasource (Data Points)',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/plugin-data-points/',
+    greeting: "Now let's collect the numeric weather observations — temperature, pressure, humidity, wind — as datapoints we can graph and threshold. This extends the Conditions plugin class with the value collection pattern.",
+    quickPrompts: ['How do I return datapoint values?', 'What is the (value, N) pattern?', 'How do I configure datapoints in zenpack.yaml?', 'How do I create graphs?', 'What units should I use?'],
+    context: `CURRENT LESSON: Datasource Plugin — Data Points
+
+Goal: Add a Conditions plugin that collects numeric weather observations for graphing.
+
+1. Add to $ZP_DIR/dsplugins.py:
+
+   class Conditions(PythonDataSourcePlugin):
+       @classmethod
+       def config_key(cls, datasource, context):
+           return (context.device().id, datasource.getCycleTime(context),
+                   datasource.plugin_classname, context.id)
+
+       @classmethod
+       def params(cls, datasource, context):
+           return {'station_id': context.id, 'title': context.title()}
+
+       @inlineCallbacks
+       def collect(self, config):
+           data = self.new_data()
+           for datasource in config.datasources:
+               station_id = datasource.params.get('station_id', '')
+               url = 'https://api.weather.gov/stations/{}/observations/latest'.format(station_id)
+               try:
+                   response = yield getPage(url.encode(), headers={'Accept': 'application/geo+json'})
+                   obs = json.loads(response)['properties']
+                   for datapoint_id in datasource.points:
+                       # Map datapoint names to API fields
+                       field_map = {
+                           'temperature': ('temperature', 'value'),
+                           'dewpoint': ('dewpoint', 'value'),
+                           'barometricPressure': ('barometricPressure', 'value'),
+                           'visibility': ('visibility', 'value'),
+                           'relativeHumidity': ('relativeHumidity', 'value'),
+                           'windSpeed': ('windSpeed', 'value'),
+                           'windDirection': ('windDirection', 'value'),
+                       }
+                       if datapoint_id in field_map:
+                           field = obs.get(field_map[datapoint_id][0], {})
+                           value = field.get('value') if isinstance(field, dict) else field
+                           if value is not None:
+                               data['values'][datasource.component][datapoint_id] = (value, 'N')
+               except Exception as e:
+                   log.warning('Failed to collect conditions for %s: %s', station_id, e)
+           returnValue(data)
+
+   Key line: data['values'][component][datapoint_id] = (value, 'N')
+   - 'N' = use current time as timestamp
+   - Use a UNIX timestamp integer instead of 'N' if you have an exact observation time
+
+2. Add to zenpack.yaml (inside the Station template):
+
+   datasources:
+     conditions:
+       type: Python
+       plugin_classname: ZenPacks.training.NWS.dsplugins.Conditions
+       cycletime: "600"
+       datapoints:
+         temperature: GAUGE
+         dewpoint: GAUGE
+         barometricPressure: GAUGE
+         visibility: GAUGE
+         relativeHumidity: GAUGE
+         windSpeed: GAUGE
+         windDirection: GAUGE
+
+   graphs:
+     Temperature:
+       units: degrees C
+       graphpoints:
+         temperature:
+           dpName: conditions_temperature
+           format: "%7.2lf"
+     Pressure:
+       units: Pascals
+       graphpoints:
+         barometricPressure:
+           dpName: conditions_barometricPressure
+     Humidity:
+       units: percent
+       graphpoints:
+         relativeHumidity:
+           dpName: conditions_relativeHumidity
+
+3. Reinstall and test:
+   zenpack --link --install $ZP_TOP_DIR
+   serviced service restart zenhub
+   zenpython run -v10 --device=api.weather.gov
+
+Common gotchas:
+  - datapoint dpName format in graphs is: datasourceName_datapointName
+  - (value, 'N') is the required format — just the number won't work
+  - NWS API returns None for some readings — always check before storing
+  - GAUGE type for instantaneous values; DERIVE/COUNTER for cumulative counters`
+  },
+  {
+    track: 'HTTP Tutorial',
+    id: 'http-plugin-modeling',
+    label: 'Step 7: Datasource (Modeling)',
+    docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/plugin-modeling/',
+    greeting: "Final step — datasource plugins can also update the Zenoss model, not just collect data. This lets you refresh component properties (like current weather description) more frequently than the 12-hour zenmodeler cycle.",
+    quickPrompts: ['Why update the model from a datasource?', 'How do I return an ObjectMap from collect?', 'What are maps in the data dict?', 'How often should I model from a datasource?'],
+    context: `CURRENT LESSON: Datasource Plugin — Modeling
+
+Goal: Extend the Conditions plugin to also update the model (e.g., store current weather description on the component).
+
+Key concept:
+  Datasource plugins can return model changes via data['maps'].
+  This updates the model without waiting for the 12-hour zenmodeler cycle.
+  IMPORTANT: Model updates are much more expensive than events or datapoints — use sparingly.
+
+1. Add import to dsplugins.py:
+   from Products.DataCollector.plugins.DataMaps import ObjectMap
+
+2. In Conditions.collect(), after collecting values, add:
+   obs_text = obs.get('textDescription', '')
+   if obs_text:
+       data['maps'].append(ObjectMap({
+           'relname': 'nwsStations',
+           'modname': 'ZenPacks.training.NWS.NwsStation',
+           'id': datasource.component,
+           'weather': obs_text,
+       }))
+
+3. Add 'weather' property to NwsStation in zenpack.yaml:
+   NwsStation:
+     base: [zenpacklib.Component]
+     properties:
+       # ... existing properties ...
+       weather:
+         label: Current Conditions
+         type: string
+
+4. Reinstall and test:
+   zenpack --link --install $ZP_TOP_DIR
+   serviced service restart zenhub
+   zenpython run -v10 --device=api.weather.gov
+   — Look for "datamaps applied" in the output
+
+5. Verify in UI:
+   - Navigate to device > NWS Stations > click a station
+   - Overview should show the Current Conditions field
+
+data['maps'] structure:
+  - List of ObjectMap or RelationshipMap instances
+  - ObjectMap with relname+modname+id targets a specific component
+  - Same structure as maps returned from modeler plugins
+
+Common gotchas:
+  - Modeling from datasources runs every cycletime — keep it cheap
+  - Must set relname, modname, AND id to target a specific component
+  - Reinstall needed after zenpack.yaml property changes (not just Python restart)
+  - Check the Overview tab in UI to confirm property is displayed`
+  }
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+let apiKey = '';
+let currentStep = null;
+let conversationHistory = [];
+let isStreaming = false;
+let progress = {};
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+function init() {
+  const stored = localStorage.getItem('zdk_api_key');
+  if (stored) {
+    apiKey = stored;
+    document.getElementById('api-key-input').value = stored;
+    document.getElementById('remember-key').checked = true;
+    showApp();
+  }
+
+  progress = JSON.parse(localStorage.getItem('zdk_progress') || '{}');
+
+  document.getElementById('start-btn').addEventListener('click', handleKeySubmit);
+  document.getElementById('api-key-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleKeySubmit();
+  });
+  document.getElementById('change-key-btn').addEventListener('click', showKeyScreen);
+  document.getElementById('hamburger').addEventListener('click', toggleSidebar);
+  document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
+  document.getElementById('send-btn').addEventListener('click', sendMessage);
+  document.getElementById('new-session-btn').addEventListener('click', newSession);
+  document.getElementById('mark-done-btn').addEventListener('click', toggleCurrentDone);
+  document.getElementById('user-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  document.getElementById('user-input').addEventListener('input', autoResize);
+
+  buildSidebar();
+}
+
+function handleKeySubmit() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key.startsWith('sk-')) {
+    alert('Please enter a valid Anthropic API key (starts with sk-)');
+    return;
+  }
+  apiKey = key;
+  if (document.getElementById('remember-key').checked) {
+    localStorage.setItem('zdk_api_key', key);
+  } else {
+    localStorage.removeItem('zdk_api_key');
+  }
+  showApp();
+}
+
+function showApp() {
+  document.getElementById('key-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  if (!currentStep) selectStep(STEPS[0]);
+}
+
+function showKeyScreen() {
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('key-screen').style.display = 'flex';
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+
+function buildSidebar() {
+  const nav = document.getElementById('sidebar-nav');
+  let currentTrack = null;
+  nav.innerHTML = '';
+
+  STEPS.forEach((step, idx) => {
+    if (step.track !== currentTrack) {
+      currentTrack = step.track;
+      const label = document.createElement('div');
+      label.className = 'track-label';
+      label.textContent = step.track;
+      nav.appendChild(label);
+    }
+
+    const item = document.createElement('div');
+    item.className = 'step-item';
+    item.dataset.idx = idx;
+
+    const check = document.createElement('div');
+    check.className = 'step-check' + (progress[step.id] ? ' done' : '');
+    check.textContent = progress[step.id] ? '✓' : '';
+    check.addEventListener('click', e => { e.stopPropagation(); toggleDone(step.id, check); });
+
+    const lbl = document.createElement('span');
+    lbl.className = 'step-label';
+    lbl.textContent = step.label;
+
+    item.appendChild(check);
+    item.appendChild(lbl);
+    item.addEventListener('click', () => { selectStep(step); closeSidebar(); });
+    nav.appendChild(item);
+  });
+}
+
+function selectStep(step) {
+  currentStep = step;
+  conversationHistory = [];
+
+  document.querySelectorAll('.step-item').forEach((el, idx) => {
+    el.classList.toggle('active', STEPS[idx].id === step.id);
+  });
+
+  document.getElementById('step-title').textContent = step.label;
+  document.getElementById('doc-link').href = step.docUrl;
+  document.getElementById('doc-link').textContent = 'Docs ↗';
+
+  const doneBtn = document.getElementById('mark-done-btn');
+  doneBtn.textContent = progress[step.id] ? '✓ Completed' : 'Mark complete';
+  doneBtn.className = progress[step.id] ? 'done' : '';
+
+  buildQuickPrompts(step);
+
+  const messages = document.getElementById('messages');
+  messages.innerHTML = '';
+  appendMessage('assistant', step.greeting);
+}
+
+function buildQuickPrompts(step) {
+  const container = document.getElementById('quick-prompts');
+  container.innerHTML = '';
+  step.quickPrompts.forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'qp-btn';
+    btn.textContent = q;
+    btn.addEventListener('click', () => {
+      if (!isStreaming) {
+        document.getElementById('user-input').value = q;
+        sendMessage();
+      }
+    });
+    container.appendChild(btn);
+  });
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.toggle('mobile-open');
+  overlay.classList.toggle('visible');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebar-overlay').classList.remove('visible');
+}
+
+function toggleDone(stepId, checkEl) {
+  progress[stepId] = !progress[stepId];
+  localStorage.setItem('zdk_progress', JSON.stringify(progress));
+  checkEl.className = 'step-check' + (progress[stepId] ? ' done' : '');
+  checkEl.textContent = progress[stepId] ? '✓' : '';
+  if (currentStep && currentStep.id === stepId) {
+    const btn = document.getElementById('mark-done-btn');
+    btn.textContent = progress[stepId] ? '✓ Completed' : 'Mark complete';
+    btn.className = progress[stepId] ? 'done' : '';
+  }
+}
+
+function toggleCurrentDone() {
+  if (!currentStep) return;
+  const check = document.querySelector(`.step-item.active .step-check`);
+  if (check) toggleDone(currentStep.id, check);
+  else {
+    progress[currentStep.id] = !progress[currentStep.id];
+    localStorage.setItem('zdk_progress', JSON.stringify(progress));
+    const btn = document.getElementById('mark-done-btn');
+    btn.textContent = progress[currentStep.id] ? '✓ Completed' : 'Mark complete';
+    btn.className = progress[currentStep.id] ? 'done' : '';
+  }
+}
+
+// ── Messages ──────────────────────────────────────────────────────────────────
+
+function appendMessage(role, content) {
+  const messages = document.getElementById('messages');
+  const msg = document.createElement('div');
+  msg.className = 'msg ' + role;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = role === 'assistant' ? 'AI' : 'You';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+
+  if (role === 'assistant') {
+    bubble.innerHTML = renderMarkdown(content);
+    addCopyButtons(bubble);
+  } else {
+    bubble.textContent = content;
+  }
+
+  msg.appendChild(avatar);
+  msg.appendChild(bubble);
+  messages.appendChild(msg);
+  messages.scrollTop = messages.scrollHeight;
+  return bubble;
+}
+
+function appendStreamingMessage() {
+  const messages = document.getElementById('messages');
+  const msg = document.createElement('div');
+  msg.className = 'msg assistant';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = 'AI';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+
+  msg.appendChild(avatar);
+  msg.appendChild(bubble);
+  messages.appendChild(msg);
+  messages.scrollTop = messages.scrollHeight;
+  return bubble;
+}
+
+function renderMarkdown(text) {
+  if (typeof marked === 'undefined') return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const renderer = new marked.Renderer();
+  const origCode = renderer.code.bind(renderer);
+  renderer.code = (code, lang) => {
+    const escaped = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<div class="code-block-wrap"><pre><code>${escaped}</code></pre><button class="copy-btn" data-code="${escaped.replace(/"/g,'&quot;')}">Copy</button></div>`;
+  };
+  marked.use({ renderer, breaks: true });
+  return marked.parse(text);
+}
+
+function addCopyButtons(el) {
+  el.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.previousElementSibling.querySelector('code').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+      });
+    });
+  });
+}
+
+function autoResize() {
+  const ta = document.getElementById('user-input');
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 150) + 'px';
+}
+
+// ── API Call ──────────────────────────────────────────────────────────────────
+
+async function sendMessage() {
+  if (isStreaming || !currentStep) return;
+  const input = document.getElementById('user-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  appendMessage('user', text);
+
+  conversationHistory.push({ role: 'user', content: text });
+  if (conversationHistory.length > 40) {
+    conversationHistory = conversationHistory.slice(-40);
+  }
+
+  const systemPrompt = `${INSTRUCTOR_BASE}
+
+${currentStep.context}
+
+REFERENCE:
+- Tutorial URL for this step: ${currentStep.docUrl}
+- ZDK Background: https://zenpacks.zenoss.io/zdk/background/
+- Troubleshooting: https://zenpacks.zenoss.io/zdk/reference/troubleshooting/
+- CLI Reference: https://zenpacks.zenoss.io/zdk/reference/cli-reference/
+- zenpack.yaml Reference: https://zenpacks.zenoss.io/zdk/reference/zenpack-yaml/`;
+
+  const bubble = appendStreamingMessage();
+  isStreaming = true;
+  document.getElementById('send-btn').disabled = true;
+  document.getElementById('status-text').textContent = 'Thinking…';
+
+  let fullText = '';
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        stream: true,
+        system: systemPrompt,
+        messages: conversationHistory
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    bubble.innerHTML = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (raw === '[DONE]' || !raw) continue;
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
+            fullText += parsed.delta.text;
+            bubble.innerHTML = renderMarkdown(fullText);
+            addCopyButtons(bubble);
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+          }
+        } catch (_) {}
+      }
+    }
+
+    conversationHistory.push({ role: 'assistant', content: fullText });
+
+  } catch (err) {
+    bubble.innerHTML = `<span style="color:var(--red)">Error: ${err.message}</span>`;
+    conversationHistory.pop();
+  } finally {
+    isStreaming = false;
+    document.getElementById('send-btn').disabled = false;
+    document.getElementById('status-text').textContent = '';
+  }
+}
+
+function newSession() {
+  conversationHistory = [];
+  const messages = document.getElementById('messages');
+  messages.innerHTML = '';
+  if (currentStep) appendMessage('assistant', currentStep.greeting);
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+
+init();
+</script>
+</body>
+</html>
