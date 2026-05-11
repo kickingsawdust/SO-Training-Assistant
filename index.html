@@ -87,6 +87,9 @@
     }
     .step-item:hover { background: var(--surface2); color: var(--text); }
     .step-item.active { background: var(--surface2); color: var(--text); border-left-color: var(--accent); }
+    .step-item.locked { opacity: .4; }
+    .step-item.locked:hover { background: none; color: var(--text2); }
+    .lock-icon { font-size: 0.65rem; color: var(--text3); flex-shrink: 0; margin-left: auto; }
     .step-check {
       width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 4px;
       flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -117,6 +120,13 @@
     }
     #mark-done-btn:hover { border-color: var(--green); color: var(--green); }
     #mark-done-btn.done { background: var(--green); border-color: var(--green); color: #000; font-weight: 600; }
+    #guide-btn {
+      font-size: 0.78rem; padding: 5px 12px; border-radius: 6px;
+      border: 1px solid var(--accent2); background: none; color: var(--accent2);
+      cursor: pointer; transition: all .12s; white-space: nowrap; font-weight: 600;
+    }
+    #guide-btn:hover { background: var(--accent2); color: #fff; }
+    #guide-btn.active { background: var(--accent2); color: #fff; }
 
     /* Quick prompts */
     #quick-prompts {
@@ -279,6 +289,7 @@
       <button id="hamburger">☰</button>
       <span id="step-title">Select a step</span>
       <a id="doc-link" href="#" target="_blank">Docs ↗</a>
+      <button id="guide-btn">Guide Me</button>
       <button id="mark-done-btn">Mark complete</button>
     </div>
     <div id="quick-prompts"></div>
@@ -302,13 +313,13 @@
 const INSTRUCTOR_BASE = `You are an expert ZDK (ZenPack Development Kit) instructor for Zenoss. Your students are Zenoss customers learning to build custom ZenPacks. They are working through hands-on tutorials on their own Zenoss development server.
 
 Your style:
-- Conversational and encouraging — you replace a live instructor
-- When a student hits an error, ask them to share the exact error message before guessing the cause
-- Short direct answers for simple questions; detailed explanations for concepts
-- Always show real commands and code rather than abstractions
-- Connect new concepts to things already covered in earlier steps
-- Never lecture unprompted — respond to what the student actually asks
-- If a question is somewhat outside the tutorial scope but you know the answer, answer it — don't deflect to "contact support" for things you can actually explain
+- You are guiding students through a hands-on tutorial, not answering a help desk ticket
+- Be directive: tell them what to do next, then wait for them to report back
+- Give one concrete action at a time — a command to run, a file to edit, a UI step to take
+- After each instruction, explicitly prompt them to confirm it worked or share what they see
+- When a student hits an error, ask for the exact error message before guessing the cause
+- When Guide Mode is active: be strictly step-by-step; do not give the next instruction until the student confirms the previous one succeeded
+- If a question is somewhat outside tutorial scope but you know the answer, answer it
 
 Key reminders students often need:
 - YAML indentation matters — use spaces, never tabs
@@ -346,8 +357,8 @@ const STEPS = [
     id: 'prereq-background',
     label: 'What is ZDK?',
     docUrl: 'https://zenpacks.zenoss.io/zdk/background/',
-    greeting: "Welcome! Before jumping into the tutorials, let's make sure you understand what the ZDK is and what you'll be building. What would you like to know?",
-    quickPrompts: ['What is a ZenPack?', 'What is zenpacklib?', 'What can I define in YAML?', 'Who is ZDK for?'],
+    greeting: "Before we start building, let's make sure you're in the right place. Quick question: are you here to build a custom ZenPack that extends Zenoss, or are you still figuring out if ZDK is the right tool for your situation?",
+    quickPrompts: ["I'm building a ZenPack — let's go", "What exactly is a ZenPack?", "Is ZDK right for my use case?", "What will I be able to build?"],
     context: `CURRENT LESSON: ZDK Background — What is the ZenPack Development Kit?
 
 The ZenPack Development Kit (ZDK) is a collection of development tools and documentation for building custom ZenPacks — plugins that extend Zenoss Collection Zone and Resource Manager.
@@ -382,8 +393,8 @@ Examples: ZenPacks.training.NetBotz, ZenPacks.zenoss.ZenPackLib, ZenPacks.acme.W
     id: 'prereq-dev-env',
     label: 'Dev Environment Setup',
     docUrl: 'https://zenpacks.zenoss.io/zdk/dev-env/',
-    greeting: "Let's get your development environment set up. This covers the system requirements, user configuration, the /z shared directory, and a few tweaks that make development much smoother. Where are you starting from — fresh install, or do you have Zenoss already running?",
-    quickPrompts: ['What are the system requirements?', 'How do I set up the zenoss user?', 'What is the /z directory?', 'How do I configure serviced?', 'What bash aliases should I add?'],
+    greeting: "Dev environment setup — everything else depends on this being right. First question: do you have a running Zenoss instance (Resource Manager or Collection Zone) with Control Center/serviced accessible? Answer yes or no and we'll work from exactly where you are.",
+    quickPrompts: ["Yes, Zenoss is running", "No — I need Zenoss installed first", "Walk me through /z setup", "I hit an error"],
     context: `CURRENT LESSON: Dev Environment Setup
 
 Reference: https://zenpacks.zenoss.io/zdk/dev-env/
@@ -455,8 +466,8 @@ Common gotchas:
     id: 'prereq-get-started',
     label: 'Getting Started',
     docUrl: 'https://zenpacks.zenoss.io/zdk/get-started/',
-    greeting: "Almost ready to start the tutorials. This step covers installing ZenPackLib and verifying your environment works end-to-end — creating a test ZenPack and validating the YAML. Have you already installed ZenPackLib?",
-    quickPrompts: ['How do I install ZenPackLib?', 'How do I create my first ZenPack?', 'How do I validate my zenpack.yaml?', 'How do I install a ZenPack in dev mode?'],
+    greeting: "Last prerequisite before the tutorials. Log into your dev server as the zenoss user and run this:\n\n```\nzenpacklib --version\n```\n\nTell me what you see — we'll know immediately if ZenPackLib is ready or needs installing.",
+    quickPrompts: ["Walk me through ZenPackLib install", "Got an error / command not found", "It's installed — what's next?", "How do I switch to the zenoss user?"],
     context: `CURRENT LESSON: Getting Started with ZDK
 
 Reference: https://zenpacks.zenoss.io/zdk/get-started/
@@ -519,8 +530,8 @@ Common gotchas:
     id: 'snmp-overview',
     label: 'Overview',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/monitoring-an-snmp-device/',
-    greeting: "Welcome to the SNMP tutorial! We'll build a ZenPack to monitor a NetBotz environmental sensor — it measures temperature, humidity, dew point, audio levels, and airflow. By the end you'll have monitoring, modeling, component relationships, and SNMP trap handling all working. What questions do you have before we dive into the tools?",
-    quickPrompts: ['What is a ZenPack?', 'What is the ZDK?', 'What will I build in this tutorial?', 'What do I need installed?'],
+    greeting: "The SNMP tutorial builds a complete ZenPack in 6 sequential steps — tools, monitoring, device modeling, component modeling, component monitoring, and traps. Each step builds directly on the last, so work through them in order. Have you finished the Prerequisites (dev environment + Getting Started)? Say yes and we'll jump straight into Step 1.",
+    quickPrompts: ["Yes — let's start Step 1", "I still need to do the prerequisites", "What exactly are we building?", "What is a ZenPack?"],
     context: `CURRENT LESSON: SNMP Tutorial Overview
 
 This tutorial builds a ZenPack to monitor a NetBotz environmental sensor device using SNMP. The NetBotz monitors temperature, humidity, dew point, audio levels, and air flow.
@@ -545,8 +556,8 @@ Key concepts:
     id: 'snmp-tools',
     label: 'Step 1: SNMP Tools',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/tools/',
-    greeting: "Let's set up the SNMP tools you'll need throughout this tutorial. These let you inspect device MIBs and OIDs directly from the command line — which is essential before you can write any monitoring templates. Ready to install them?",
-    quickPrompts: ['What is snmpwalk?', 'How do I translate an OID?', 'What is snmpsim for?', 'Walk me through snmp.conf'],
+    greeting: "Step 1: Install the SNMP command-line tools — you'll use these throughout the tutorial to inspect device OIDs before writing any config. Run this as root and tell me what you see:\n\n```\nyum -y install net-snmp-utils\n```",
+    quickPrompts: ["Walk me through this step", "I got an error", "Tools installed — what's next?", "What is snmpwalk used for?"],
     context: `CURRENT LESSON: SNMP Tools
 
 Goal: Install and learn to use the CLI tools needed to work with SNMP devices.
@@ -593,8 +604,8 @@ Common gotchas:
     id: 'snmp-device-monitoring',
     label: 'Step 2: Device Monitoring',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/device-monitoring/',
-    greeting: "Time to create the ZenPack and build your first monitoring template. We'll collect device-level SNMP metrics — things like total SNMP requests — and graph them. This is the foundation everything else builds on.",
-    quickPrompts: ['How do I create a ZenPack?', 'How do I add a device to monitor?', 'What is a monitoring template?', 'How do I set up a datasource?', 'How do I test collection?'],
+    greeting: "Step 2: Create the ZenPack and install it. Run these as the zenoss user and tell me what happens:\n\n```\nzenpacklib --create ZenPacks.training.NetBotz\nzenpack --link --install ZenPacks.training.NetBotz\nserviced service restart Zope\n```",
+    quickPrompts: ["Walk me through this step", "I got an error", "ZenPack installed — what's next?", "What does --link do?"],
     context: `CURRENT LESSON: Device Monitoring
 
 Goal: Create the ZenPack, a device class, and a monitoring template with SNMP datasource, threshold, and graph.
@@ -649,8 +660,8 @@ Common gotchas:
     id: 'snmp-device-modeling',
     label: 'Step 3: Device Modeling',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/device-modeling/',
-    greeting: "Now we'll go beyond simple monitoring and actually model the device — adding custom attributes. We'll create a NetBotzDevice subclass with a temp_sensor_count property and write a modeler plugin that populates it via SNMP.",
-    quickPrompts: ['What is device modeling?', 'How do I create a Device subclass?', 'How do I write an SNMP modeler plugin?', 'How do I test the modeler?', 'How do I show custom fields on the overview page?'],
+    greeting: "Step 3: We're adding a custom attribute to the device — temp_sensor_count — and writing a modeler plugin that reads it from SNMP. Open zenpack.yaml in your editor. Tell me when you have it open and I'll show you exactly what to add.",
+    quickPrompts: ["Walk me through this step", "I got an error", "Show me the zenpack.yaml changes", "What is device modeling?"],
     context: `CURRENT LESSON: Device Modeling
 
 Goal: Create a custom Device subclass (NetBotzDevice) with a temp_sensor_count property, and a modeler plugin that reads it via SNMP.
@@ -727,8 +738,8 @@ Common gotchas:
     id: 'snmp-component-modeling',
     label: 'Step 4: Component Modeling',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/component-modeling/',
-    greeting: "Here's where the model gets richer — we'll define temperature sensors as components with their own properties, and establish the relationship between the NetBotzDevice and its sensors. This is the pattern you'll use for anything that has multiple instances (interfaces, disks, sensors, etc.).",
-    quickPrompts: ['What is a component?', 'How do I define a 1:MC relationship?', 'How do I write a RelationshipMap?', 'What is buildRelations()?', 'How do I test component modeling?'],
+    greeting: "Step 4: Define temperature sensors as their own component type with a one-to-many relationship to the device. Open zenpack.yaml — we're adding a new class and a relationship line. Tell me when it's open.",
+    quickPrompts: ["Walk me through this step", "I got an error", "What is a component?", "What does 1:MC mean?"],
     context: `CURRENT LESSON: Component Modeling
 
 Goal: Define NetBotzTemperatureSensor as a component class, relate it to NetBotzDevice (1:MC), and update the modeler to discover sensor instances.
@@ -814,8 +825,8 @@ Common gotchas:
     id: 'snmp-component-monitoring',
     label: 'Step 5: Component Monitoring',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/component-monitoring/',
-    greeting: "Now we add monitoring to each individual temperature sensor component. The key here is template naming — get it wrong and Zenoss won't bind the template to your components.",
-    quickPrompts: ['How does template naming work for components?', 'What OID do I use for temperature?', 'How do I add a threshold for overtemperature?', 'How do I verify the template is bound?'],
+    greeting: "Step 5: Add a monitoring template that collects temperature from each sensor component. The most common gotcha here is the template name — it must match the component class label exactly with spaces removed. Ready to create it in the Zenoss UI?",
+    quickPrompts: ["Walk me through this step", "I got an error", "Template created — how do I test it?", "How does template naming work?"],
     context: `CURRENT LESSON: Component Monitoring
 
 Goal: Add a monitoring template for NetBotzTemperatureSensor components that graphs temperature and triggers alerts.
@@ -875,8 +886,8 @@ Common gotchas:
     id: 'snmp-traps',
     label: 'Step 6: SNMP Traps',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/traps/',
-    greeting: "Last step of the SNMP tutorial — SNMP traps. Instead of Zenoss polling the device, the device pushes notifications to Zenoss. We'll import the MIB, simulate a trap, and map it to a meaningful event class.",
-    quickPrompts: ['How do I import a MIB?', 'How do I simulate an SNMP trap?', 'What is zentrap?', 'How do event mappings work?', 'How do I add a transform?'],
+    greeting: "Step 6 — final SNMP step: configure Zenoss to receive and decode SNMP traps. First, verify zentrap is running:\n\n```\nserviced service status zentrap\n```\n\nTell me what you see.",
+    quickPrompts: ["Walk me through this step", "I got an error", "zentrap is running — what's next?", "What is an SNMP trap?"],
     context: `CURRENT LESSON: SNMP Traps
 
 Goal: Import the NETBOTZV2-MIB, simulate temperature traps, and map them to Zenoss events with proper classification.
@@ -942,8 +953,8 @@ Common gotchas:
     id: 'http-overview',
     label: 'Overview',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/monitoring-an-http-api/',
-    greeting: "Welcome to the HTTP API tutorial! We'll build a ZenPack that monitors the National Weather Service API — collecting weather alerts as events and temperature/humidity/pressure as datapoints. This track covers Python modeler plugins and the PythonCollector framework, which is how you monitor any non-SNMP data source.",
-    quickPrompts: ['How is this different from SNMP monitoring?', 'What is PythonCollector?', 'What will I build in this tutorial?', 'Do I need the SNMP tutorial first?'],
+    greeting: "The HTTP tutorial is more advanced and assumes you've finished the SNMP tutorial — we skip the basics and go straight into Python plugins and PythonCollector. The ZenPack monitors the National Weather Service API: weather stations as components, alerts as events, and observations as graphable datapoints. Have you completed the SNMP tutorial? Say yes and we'll start.",
+    quickPrompts: ["Yes — let's start", "I haven't done SNMP yet", "What's different from SNMP?", "What is PythonCollector?"],
     context: `CURRENT LESSON: HTTP Tutorial Overview
 
 This tutorial builds a ZenPack that monitors the National Weather Service (NWS) public API — no authentication required.
@@ -976,8 +987,8 @@ ZenPack name: ZenPacks.training.NWS`
     id: 'http-nws-api',
     label: 'Step 1: NWS API',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/nws-api/',
-    greeting: "Before building anything, let's understand the API we'll be monitoring. The National Weather Service API is public and free — no key required. Understanding the response structure now will make writing the modeler and datasource plugins much easier.",
-    quickPrompts: ['What endpoints does the NWS API expose?', 'What does the stations response look like?', 'How do I get weather alerts?', 'How do I get observations?', 'What is GeoJSON?'],
+    greeting: "Step 1: Understand the API before writing any code. Run this and tell me what you see:\n\n```\ncurl 'https://api.weather.gov/stations?state=TX' | python -m json.tool | head -60\n```\n\nWe'll walk through the response structure together.",
+    quickPrompts: ["Walk me through the API structure", "I got an error", "API looks good — what's next?", "What is GeoJSON?"],
     context: `CURRENT LESSON: NWS API
 
 Base URL: https://api.weather.gov
@@ -1032,8 +1043,8 @@ zNwsStates property:
     id: 'http-create-zenpack',
     label: 'Step 2: Create ZenPack',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/create-zenpack/',
-    greeting: "Let's create the ZenPacks.training.NWS ZenPack and write the zenpack.yaml that defines our device class, component class, and their relationship. This is the skeleton everything else plugs into.",
-    quickPrompts: ['What goes in zenpack.yaml?', 'How do I define zProperties?', 'What is the 1:MC relationship for?', 'How do I install in development mode?'],
+    greeting: "Step 2: Create the NWS ZenPack. Run this as the zenoss user:\n\n```\ncd /z\nzenpacklib --create ZenPacks.training.NWS\n```\n\nTell me when it's done — I'll walk you through the zenpack.yaml next.",
+    quickPrompts: ["Walk me through this step", "I got an error", "ZenPack created — show me the YAML", "What is the 1:MC relationship?"],
     context: `CURRENT LESSON: Create the NWS ZenPack
 
 1. Create the ZenPack:
@@ -1100,8 +1111,8 @@ Key concepts:
     id: 'http-modeler-plugin',
     label: 'Step 3: Modeler Plugin',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/create-modeler-plugin/',
-    greeting: "Now we write the modeler plugin that discovers weather stations from the NWS API and creates NwsStation components. This uses PythonPlugin and Twisted's async patterns — slightly different from the SNMP modeler you may have seen.",
-    quickPrompts: ['What is PythonPlugin vs SnmpPlugin?', 'How does @inlineCallbacks work?', 'What does the collect method do?', 'What does the process method do?', 'How do I restart after plugin changes?'],
+    greeting: "Step 3: Create the modeler plugin. Start by making the directory structure:\n\n```\nmkdir -p $ZP_DIR/modeler/plugins/NWS\ntouch $ZP_DIR/modeler/__init__.py\ntouch $ZP_DIR/modeler/plugins/__init__.py\ntouch $ZP_DIR/modeler/plugins/NWS/__init__.py\n```\n\nDone? I'll give you the full Stations.py to write next.",
+    quickPrompts: ["Walk me through this step", "I got an error", "Directories created — show me Stations.py", "What is PythonPlugin?"],
     context: `CURRENT LESSON: Modeler Plugin (HTTP/Python)
 
 Goal: Create a Python modeler plugin that queries the NWS API to discover weather stations.
@@ -1184,8 +1195,8 @@ Common gotchas:
     id: 'http-add-device',
     label: 'Step 4: Add Device Class',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/add-device/',
-    greeting: "With the modeler written, let's wire up the device class in zenpack.yaml and add the actual device. This configures what monitoring and modeler plugins apply to /NWS devices.",
-    quickPrompts: ['What goes in device_classes in zenpack.yaml?', 'Why disable ping and SNMP?', 'How do I add the device?', 'What does zendisc do?'],
+    greeting: "Step 4: Wire up the device class and add the device. Open zenpack.yaml — we're adding a device_classes section. Tell me when it's open and I'll show you exactly what to add.",
+    quickPrompts: ["Walk me through this step", "I got an error", "Device class added — how do I add the device?", "Why disable ping and SNMP?"],
     context: `CURRENT LESSON: Add Device Class
 
 Goal: Configure the /NWS device class in zenpack.yaml and add api.weather.gov as a device.
@@ -1230,8 +1241,8 @@ Common gotchas:
     id: 'http-plugin-events',
     label: 'Step 5: Datasource (Events)',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/plugin-events/',
-    greeting: "Now we write the first datasource plugin — it watches for weather alerts and generates Zenoss events when severe weather is active. This introduces PythonCollector and the PythonDataSourcePlugin pattern.",
-    quickPrompts: ['What is PythonCollector?', 'What are config_key and params for?', 'How do I create a Zenoss event?', 'What event fields are required?', 'How do I test event collection?'],
+    greeting: "Step 5: Create the events datasource plugin. First, verify PythonCollector is installed:\n\n```\nzenpack --list | grep PythonCollector\n```\n\nTell me what you see.",
+    quickPrompts: ["Walk me through this step", "I got an error", "PythonCollector installed — what's next?", "What is PythonCollector?"],
     context: `CURRENT LESSON: Datasource Plugin — Events
 
 Goal: Create a PythonDataSourcePlugin that fetches NWS weather alerts and generates Zenoss events.
@@ -1323,8 +1334,8 @@ Common gotchas:
     id: 'http-plugin-datapoints',
     label: 'Step 6: Datasource (Data Points)',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/plugin-data-points/',
-    greeting: "Now let's collect the numeric weather observations — temperature, pressure, humidity, wind — as datapoints we can graph and threshold. This extends the Conditions plugin class with the value collection pattern.",
-    quickPrompts: ['How do I return datapoint values?', 'What is the (value, N) pattern?', 'How do I configure datapoints in zenpack.yaml?', 'How do I create graphs?', 'What units should I use?'],
+    greeting: "Step 6: Collect numeric weather readings as datapoints for graphing. Open dsplugins.py — we're adding a Conditions class below the Alerts class you already wrote. Tell me when it's open.",
+    quickPrompts: ["Walk me through this step", "I got an error", "Show me the Conditions class", "What is the (value, 'N') pattern?"],
     context: `CURRENT LESSON: Datasource Plugin — Data Points
 
 Goal: Add a Conditions plugin that collects numeric weather observations for graphing.
@@ -1424,8 +1435,8 @@ Common gotchas:
     id: 'http-plugin-modeling',
     label: 'Step 7: Datasource (Modeling)',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/plugin-modeling/',
-    greeting: "Final step — datasource plugins can also update the Zenoss model, not just collect data. This lets you refresh component properties (like current weather description) more frequently than the 12-hour zenmodeler cycle.",
-    quickPrompts: ['Why update the model from a datasource?', 'How do I return an ObjectMap from collect?', 'What are maps in the data dict?', 'How often should I model from a datasource?'],
+    greeting: "Final step: teach the Conditions datasource to also update the model — storing the current weather description on each station component. Open dsplugins.py and tell me when you're ready. It's a small addition to the collect method.",
+    quickPrompts: ["Walk me through this step", "I got an error", "Show me what to add", "How do I verify it worked?"],
     context: `CURRENT LESSON: Datasource Plugin — Modeling
 
 Goal: Extend the Conditions plugin to also update the model (e.g., store current weather description on the component).
@@ -1480,6 +1491,39 @@ Common gotchas:
   }
 ];
 
+// ── Prerequisites map (stepId → required stepId) ──────────────────────────────
+
+const PREREQUISITES = {
+  'prereq-get-started':     'prereq-dev-env',
+  'snmp-overview':          'prereq-get-started',
+  'snmp-tools':             'snmp-overview',
+  'snmp-device-monitoring': 'snmp-tools',
+  'snmp-device-modeling':   'snmp-device-monitoring',
+  'snmp-component-modeling':'snmp-device-modeling',
+  'snmp-component-monitoring':'snmp-component-modeling',
+  'snmp-traps':             'snmp-component-monitoring',
+  'http-overview':          'snmp-traps',
+  'http-nws-api':           'http-overview',
+  'http-create-zenpack':    'http-nws-api',
+  'http-modeler-plugin':    'http-create-zenpack',
+  'http-add-device':        'http-modeler-plugin',
+  'http-plugin-events':     'http-add-device',
+  'http-plugin-datapoints': 'http-plugin-events',
+  'http-plugin-modeling':   'http-plugin-datapoints',
+};
+
+function isLocked(stepId) {
+  const req = PREREQUISITES[stepId];
+  return req ? !progress[req] : false;
+}
+
+function prereqLabel(stepId) {
+  const req = PREREQUISITES[stepId];
+  if (!req) return '';
+  const s = STEPS.find(s => s.id === req);
+  return s ? s.label : req;
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let apiKey = '';
@@ -1487,6 +1531,7 @@ let currentStep = null;
 let conversationHistory = [];
 let isStreaming = false;
 let progress = {};
+let guidedMode = false;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -1511,6 +1556,7 @@ function init() {
   document.getElementById('send-btn').addEventListener('click', sendMessage);
   document.getElementById('new-session-btn').addEventListener('click', newSession);
   document.getElementById('mark-done-btn').addEventListener('click', toggleCurrentDone);
+  document.getElementById('guide-btn').addEventListener('click', toggleGuidedMode);
   document.getElementById('user-input').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
@@ -1561,14 +1607,15 @@ function buildSidebar() {
       nav.appendChild(label);
     }
 
+    const locked = isLocked(step.id);
     const item = document.createElement('div');
-    item.className = 'step-item';
+    item.className = 'step-item' + (locked ? ' locked' : '');
     item.dataset.idx = idx;
 
     const check = document.createElement('div');
     check.className = 'step-check' + (progress[step.id] ? ' done' : '');
     check.textContent = progress[step.id] ? '✓' : '';
-    check.addEventListener('click', e => { e.stopPropagation(); toggleDone(step.id, check); });
+    check.addEventListener('click', e => { e.stopPropagation(); if (!locked) toggleDone(step.id, check); });
 
     const lbl = document.createElement('span');
     lbl.className = 'step-label';
@@ -1576,14 +1623,42 @@ function buildSidebar() {
 
     item.appendChild(check);
     item.appendChild(lbl);
+
+    if (locked) {
+      const lockEl = document.createElement('span');
+      lockEl.className = 'lock-icon';
+      lockEl.textContent = '🔒';
+      item.appendChild(lockEl);
+    }
+
     item.addEventListener('click', () => { selectStep(step); closeSidebar(); });
     nav.appendChild(item);
   });
 }
 
+function toggleGuidedMode() {
+  guidedMode = !guidedMode;
+  const btn = document.getElementById('guide-btn');
+  btn.textContent = guidedMode ? 'Guided ✓' : 'Guide Me';
+  btn.classList.toggle('active', guidedMode);
+  if (guidedMode && currentStep) {
+    conversationHistory = [];
+    document.getElementById('messages').innerHTML = '';
+    appendMessage('assistant', currentStep.greeting);
+    document.getElementById('user-input').value = "Please walk me through this step from the very beginning, one action at a time.";
+    sendMessage();
+  }
+}
+
 function selectStep(step) {
   currentStep = step;
   conversationHistory = [];
+
+  // reset guide mode on step change
+  guidedMode = false;
+  const guideBtn = document.getElementById('guide-btn');
+  guideBtn.textContent = 'Guide Me';
+  guideBtn.classList.remove('active');
 
   document.querySelectorAll('.step-item').forEach((el, idx) => {
     el.classList.toggle('active', STEPS[idx].id === step.id);
@@ -1601,7 +1676,12 @@ function selectStep(step) {
 
   const messages = document.getElementById('messages');
   messages.innerHTML = '';
-  appendMessage('assistant', step.greeting);
+
+  if (isLocked(step.id)) {
+    appendMessage('assistant', `⚠️ **Heads up:** This step builds on **${prereqLabel(step.id)}**, which you haven't marked complete yet. You can read ahead, but you'll get more out of this step if you finish the previous one first.\n\n${step.greeting}`);
+  } else {
+    appendMessage('assistant', step.greeting);
+  }
 }
 
 function buildQuickPrompts(step) {
@@ -1636,13 +1716,16 @@ function closeSidebar() {
 function toggleDone(stepId, checkEl) {
   progress[stepId] = !progress[stepId];
   localStorage.setItem('zdk_progress', JSON.stringify(progress));
-  checkEl.className = 'step-check' + (progress[stepId] ? ' done' : '');
-  checkEl.textContent = progress[stepId] ? '✓' : '';
   if (currentStep && currentStep.id === stepId) {
     const btn = document.getElementById('mark-done-btn');
     btn.textContent = progress[stepId] ? '✓ Completed' : 'Mark complete';
     btn.className = progress[stepId] ? 'done' : '';
   }
+  // Rebuild sidebar so lock icons on subsequent steps update immediately
+  buildSidebar();
+  document.querySelectorAll('.step-item').forEach((el, idx) => {
+    el.classList.toggle('active', currentStep && STEPS[idx].id === currentStep.id);
+  });
 }
 
 function toggleCurrentDone() {
@@ -1754,7 +1837,11 @@ async function sendMessage() {
     conversationHistory = conversationHistory.slice(-40);
   }
 
-  const systemPrompt = `${INSTRUCTOR_BASE}
+  const guidedInstruction = guidedMode ? `
+
+GUIDED MODE ACTIVE: Walk the student through this step one action at a time. Give one specific instruction (a command to run, a file to edit, a UI action), then explicitly ask them to confirm it worked or share what they see before giving the next instruction. Do not list multiple steps at once. If they hit an error, troubleshoot it fully before moving on.` : '';
+
+  const systemPrompt = `${INSTRUCTOR_BASE}${guidedInstruction}
 
 ${currentStep.context}
 
