@@ -92,23 +92,38 @@
     }
     #guide-btn:hover, #guide-btn.active { background: var(--accent2); color: #fff; }
     #theme-btn {
-      font-size: 0.88rem; background: none; border: 1px solid var(--border);
-      border-radius: 5px; padding: 3px 8px; cursor: pointer; line-height: 1;
-      transition: border-color .15s;
+      font-size: 0.72rem; color: var(--text3); background: none; border: 1px solid var(--border);
+      border-radius: 5px; padding: 4px 10px; cursor: pointer; font-weight: 500;
+      transition: all .15s;
     }
-    #theme-btn:hover { border-color: var(--text3); }
+    #theme-btn:hover { color: var(--text); border-color: var(--text3); }
     #cert-btn {
       font-size: 0.78rem; padding: 5px 12px; border-radius: 6px;
       border: 1px solid var(--yellow); background: none; color: var(--yellow);
       cursor: pointer; font-weight: 600; transition: all .15s;
     }
     #cert-btn:hover { background: var(--yellow); color: #000; }
-    #reset-progress-btn, #change-key-btn {
+    #settings-wrap { position: relative; }
+    #settings-btn {
       font-size: 0.72rem; color: var(--text3); background: none; border: 1px solid var(--border);
-      border-radius: 5px; padding: 4px 10px; cursor: pointer;
+      border-radius: 5px; padding: 4px 10px; cursor: pointer; transition: all .15s;
     }
-    #reset-progress-btn:hover { color: var(--red); border-color: var(--red); }
-    #change-key-btn:hover { color: var(--text); border-color: var(--text3); }
+    #settings-btn:hover { color: var(--text); border-color: var(--text3); }
+    #settings-dropdown {
+      display: none; position: absolute; right: 0; top: calc(100% + 6px);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 4px; min-width: 160px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.12); z-index: 50;
+    }
+    #settings-dropdown.open { display: block; }
+    .settings-item {
+      display: block; width: 100%; text-align: left; padding: 7px 12px;
+      font-size: 0.82rem; color: var(--text2); background: none; border: none;
+      border-radius: 5px; cursor: pointer; transition: background .1s;
+    }
+    .settings-item:hover { background: var(--surface2); color: var(--text); }
+    .settings-item.danger:hover { color: var(--red); background: var(--surface2); }
+    .settings-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
     /* ── Panel Container ── */
     #panels { flex: 1; display: flex; overflow: hidden; }
@@ -180,10 +195,10 @@
     .lesson-divider { height: 1px; background: var(--border); margin: 16px 0; }
 
     .lesson-content {
-      font-size: 0.83rem; line-height: 1.7; color: var(--text2);
-      white-space: pre-wrap; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-      background: var(--code-bg); border: 1px solid var(--border);
-      border-radius: 8px; padding: 14px; overflow-x: auto;
+      font-size: 0.85rem; line-height: 1.75; color: var(--text2);
+      white-space: pre-wrap; font-family: inherit;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; overflow-x: auto;
     }
 
     #lesson-actions {
@@ -417,9 +432,15 @@
     <div class="app-title">ZDK <span>Training</span></div>
     <button id="guide-btn">Guide Me</button>
     <button id="cert-btn" title="View certificate of completion">🎓 Certificate</button>
-    <button id="theme-btn" title="Toggle dark mode">☀️</button>
-    <button id="reset-progress-btn" title="Clear all progress and start over">Reset</button>
-    <button id="change-key-btn">API Key</button>
+    <button id="theme-btn">Dark mode</button>
+    <div id="settings-wrap">
+      <button id="settings-btn">⚙ Settings</button>
+      <div id="settings-dropdown">
+        <button class="settings-item" id="change-key-btn">Change API Key</button>
+        <div class="settings-divider"></div>
+        <button class="settings-item danger" id="reset-progress-btn">Reset progress</button>
+      </div>
+    </div>
   </header>
 
   <!-- Three Panels -->
@@ -444,7 +465,7 @@
           <div id="lesson-objective-text">Select a step from the course map to begin.</div>
         </div>
         <div class="lesson-divider"></div>
-        <pre class="lesson-content" id="lesson-content-body">← Choose a step from the left panel to load the lesson content.</pre>
+        <div class="lesson-content" id="lesson-content-body">← Choose a step from the left panel to load the lesson content.</div>
       </div>
       <div id="lesson-actions">
         <div class="lesson-prompts-label">Ask the instructor</div>
@@ -1611,7 +1632,15 @@ let guidedMode = false;
 
 function applyTheme(dark) {
   document.documentElement.dataset.theme = dark ? 'dark' : '';
-  document.getElementById('theme-btn').textContent = dark ? '🌙' : '☀️';
+  document.getElementById('theme-btn').textContent = dark ? 'Light mode' : 'Dark mode';
+}
+
+function toggleSettingsDropdown() {
+  document.getElementById('settings-dropdown').classList.toggle('open');
+}
+
+function closeSettingsDropdown() {
+  document.getElementById('settings-dropdown').classList.remove('open');
 }
 
 function toggleTheme() {
@@ -1634,7 +1663,6 @@ function init() {
 
   document.getElementById('start-btn').addEventListener('click', handleKeySubmit);
   document.getElementById('api-key-input').addEventListener('keydown', e => { if (e.key === 'Enter') handleKeySubmit(); });
-  document.getElementById('change-key-btn').addEventListener('click', showKeyScreen);
   document.getElementById('hamburger').addEventListener('click', toggleCourseMap);
   document.getElementById('sidebar-overlay').addEventListener('click', closeCourseMap);
   document.getElementById('send-btn').addEventListener('click', sendMessage);
@@ -1642,7 +1670,10 @@ function init() {
   document.getElementById('mark-done-btn').addEventListener('click', toggleCurrentDone);
   document.getElementById('guide-btn').addEventListener('click', toggleGuidedMode);
   document.getElementById('theme-btn').addEventListener('click', toggleTheme);
-  document.getElementById('reset-progress-btn').addEventListener('click', resetProgress);
+  document.getElementById('settings-btn').addEventListener('click', e => { e.stopPropagation(); toggleSettingsDropdown(); });
+  document.getElementById('reset-progress-btn').addEventListener('click', () => { closeSettingsDropdown(); resetProgress(); });
+  document.getElementById('change-key-btn').addEventListener('click', () => { closeSettingsDropdown(); showKeyScreen(); });
+  document.addEventListener('click', e => { if (!document.getElementById('settings-wrap').contains(e.target)) closeSettingsDropdown(); });
   document.getElementById('cert-btn').addEventListener('click', openCertificate);
   document.getElementById('cert-close-btn').addEventListener('click', closeCertificate);
   document.getElementById('cert-print-btn').addEventListener('click', printCertificate);
