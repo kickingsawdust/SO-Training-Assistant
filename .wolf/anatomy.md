@@ -1,12 +1,12 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-11T15:50:02.191Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-11T18:08:30.015Z
 > Files: 4 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
 - `CLAUDE.md` — OpenWolf (~57 tok)
-- `index.html` — Single-file ZDK Training Assistant: sidebar nav, Anthropic streaming chat, 15 step contexts for SNMP+HTTP tutorials, marked.js markdown, localStorage for API key + progress, mobile-responsive (~17986 tok)
+- `index.html` — ZDK Training Assistant (~21505 tok)
 
 ## .claude/
 

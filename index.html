@@ -9,10 +9,29 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --sidebar-w: 280px;
+      --map-w: 210px;
+      --lesson-w: 390px;
+      --bg: #f8f9fc;
+      --surface: #ffffff;
+      --surface2: #f0f2f8;
+      --surface3: #f4f5fa;
+      --border: #dde1ef;
+      --accent: #2563eb;
+      --accent2: #6c63ff;
+      --text: #1e2333;
+      --text2: #4b5579;
+      --text3: #8a93b2;
+      --green: #16a34a;
+      --yellow: #ca8a04;
+      --red: #dc2626;
+      --code-bg: #f0f2f8;
+    }
+
+    [data-theme="dark"] {
       --bg: #0f1117;
       --surface: #1a1d27;
       --surface2: #22263a;
+      --surface3: #191c2a;
       --border: #2e3352;
       --accent: #4f8ef7;
       --accent2: #6c63ff;
@@ -25,12 +44,12 @@
       --code-bg: #141824;
     }
 
-    html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
 
     /* ── Key Entry Screen ── */
     #key-screen {
       display: flex; align-items: center; justify-content: center;
-      height: 100vh; padding: 24px;
+      height: 100vh; padding: 24px; background: var(--bg);
     }
     .key-card {
       background: var(--surface); border: 1px solid var(--border);
@@ -44,7 +63,7 @@
       font-size: 0.95rem; margin-bottom: 12px;
     }
     .key-card input[type="password"]:focus { outline: none; border-color: var(--accent); }
-    .remember-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; font-size: 0.85rem; color: var(--text2); }
+    .remember-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; font-size: 0.85rem; color: var(--text2); cursor: pointer; }
     .remember-row input { accent-color: var(--accent); cursor: pointer; }
     .btn-primary {
       width: 100%; padding: 11px; background: var(--accent); color: #fff;
@@ -54,221 +73,250 @@
     .btn-primary:hover { opacity: .88; }
     .key-note { margin-top: 16px; font-size: 0.78rem; color: var(--text3); line-height: 1.5; }
 
-    /* ── Main Layout ── */
-    #app { display: none; height: 100vh; overflow: hidden; }
+    /* ── App Shell ── */
+    #app { display: none; flex-direction: column; height: 100vh; }
     #app.visible { display: flex; }
 
-    /* Sidebar */
-    #sidebar {
-      width: var(--sidebar-w); flex-shrink: 0; background: var(--surface);
-      border-right: 1px solid var(--border); display: flex; flex-direction: column;
-      overflow: hidden; transition: width .25s ease, transform .25s ease;
+    /* ── Global Header ── */
+    #app-header {
+      height: 50px; background: var(--surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 16px; flex-shrink: 0; gap: 12px; z-index: 10;
     }
-    #sidebar.collapsed { width: 0; overflow: hidden; }
-    .sidebar-header {
-      padding: 16px 16px 12px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    #hamburger { display: none; background: none; border: none; color: var(--text2); font-size: 1.2rem; cursor: pointer; padding: 4px; }
+    .app-title { font-size: 0.95rem; font-weight: 700; color: var(--text); flex: 1; }
+    .app-title span { color: var(--accent); }
+    #guide-btn {
+      font-size: 0.78rem; padding: 5px 13px; border-radius: 6px;
+      border: 1px solid var(--accent2); background: none; color: var(--accent2);
+      cursor: pointer; font-weight: 600; transition: all .15s;
     }
-    .sidebar-title { font-size: 0.8rem; font-weight: 700; letter-spacing: .08em; color: var(--text3); text-transform: uppercase; }
-    .sidebar-key-btn {
+    #guide-btn:hover, #guide-btn.active { background: var(--accent2); color: #fff; }
+    #theme-btn {
+      font-size: 0.88rem; background: none; border: 1px solid var(--border);
+      border-radius: 5px; padding: 3px 8px; cursor: pointer; line-height: 1;
+      transition: border-color .15s;
+    }
+    #theme-btn:hover { border-color: var(--text3); }
+    #change-key-btn {
       font-size: 0.72rem; color: var(--text3); background: none; border: 1px solid var(--border);
-      border-radius: 5px; padding: 3px 8px; cursor: pointer;
+      border-radius: 5px; padding: 4px 10px; cursor: pointer;
     }
-    .sidebar-key-btn:hover { color: var(--text); border-color: var(--text3); }
-    .sidebar-nav { overflow-y: auto; flex: 1; padding: 8px 0; }
-    .track-label {
-      padding: 10px 16px 4px; font-size: 0.7rem; font-weight: 700;
-      letter-spacing: .1em; text-transform: uppercase; color: var(--accent); opacity: .8;
+    #change-key-btn:hover { color: var(--text); border-color: var(--text3); }
+
+    /* ── Panel Container ── */
+    #panels { flex: 1; display: flex; overflow: hidden; }
+
+    /* ── Course Map (Left) ── */
+    #course-map {
+      width: var(--map-w); flex-shrink: 0; background: var(--surface);
+      border-right: 1px solid var(--border); overflow-y: auto;
+      display: flex; flex-direction: column;
+      transition: transform .25s ease;
     }
+    .track-section { padding: 6px 0 8px; }
+    .track-header {
+      padding: 10px 12px 4px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .track-name { font-size: 0.68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); opacity: .85; }
+    .track-count { font-size: 0.68rem; color: var(--text3); }
+    .track-bar { margin: 4px 12px 6px; height: 3px; background: var(--border); border-radius: 2px; }
+    .track-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
     .step-item {
-      display: flex; align-items: center; gap: 8px;
-      padding: 7px 16px; cursor: pointer; transition: background .12s;
-      font-size: 0.85rem; color: var(--text2); border-left: 3px solid transparent;
+      display: flex; align-items: center; gap: 7px;
+      padding: 6px 12px; cursor: pointer; transition: background .1s;
+      font-size: 0.82rem; color: var(--text2); border-left: 2px solid transparent;
     }
     .step-item:hover { background: var(--surface2); color: var(--text); }
     .step-item.active { background: var(--surface2); color: var(--text); border-left-color: var(--accent); }
-    .step-item.locked { opacity: .4; }
-    .step-item.locked:hover { background: none; color: var(--text2); }
-    .lock-icon { font-size: 0.65rem; color: var(--text3); flex-shrink: 0; margin-left: auto; }
+    .step-item.locked { opacity: .38; pointer-events: none; }
     .step-check {
-      width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 4px;
+      width: 15px; height: 15px; border: 1px solid var(--border); border-radius: 3px;
       flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
-      font-size: 10px; transition: all .12s;
+      font-size: 9px; transition: all .12s;
     }
     .step-check.done { background: var(--green); border-color: var(--green); color: #000; }
-    .step-label { flex: 1; line-height: 1.3; }
+    .step-item.locked .step-check { pointer-events: none; }
+    .step-label { flex: 1; line-height: 1.3; font-size: 0.81rem; }
+    .lock-icon { font-size: 0.6rem; color: var(--text3); }
 
-    /* Main panel */
-    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    /* ── Lesson Panel (Middle) ── */
+    #lesson-panel {
+      width: var(--lesson-w); flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+      background: var(--surface3);
+    }
+    #lesson-scroll { flex: 1; overflow-y: auto; padding: 20px 20px 0; }
 
-    .top-bar {
-      padding: 12px 20px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-      background: var(--surface);
+    .lesson-track-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.7rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 10px;
     }
-    #hamburger {
-      background: none; border: none; color: var(--text2); cursor: pointer;
-      padding: 4px; font-size: 1.2rem; display: none;
-    }
-    #step-title { font-size: 1rem; font-weight: 600; flex: 1; }
-    #doc-link { font-size: 0.78rem; color: var(--accent); text-decoration: none; opacity: .8; }
-    #doc-link:hover { opacity: 1; }
-    #mark-done-btn {
-      font-size: 0.78rem; padding: 5px 12px; border-radius: 6px;
-      border: 1px solid var(--border); background: none; color: var(--text2);
-      cursor: pointer; transition: all .12s; white-space: nowrap;
-    }
-    #mark-done-btn:hover { border-color: var(--green); color: var(--green); }
-    #mark-done-btn.done { background: var(--green); border-color: var(--green); color: #000; font-weight: 600; }
-    #guide-btn {
-      font-size: 0.78rem; padding: 5px 12px; border-radius: 6px;
-      border: 1px solid var(--accent2); background: none; color: var(--accent2);
-      cursor: pointer; transition: all .12s; white-space: nowrap; font-weight: 600;
-    }
-    #guide-btn:hover { background: var(--accent2); color: #fff; }
-    #guide-btn.active { background: var(--accent2); color: #fff; }
+    .lesson-track-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 
-    /* Quick prompts */
-    #quick-prompts {
-      padding: 10px 20px 6px; border-bottom: 1px solid var(--border);
-      display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; background: var(--surface);
+    #lesson-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; line-height: 1.3; }
+
+    .lesson-objective {
+      background: linear-gradient(135deg, rgba(79,142,247,.12), rgba(108,99,255,.08));
+      border: 1px solid rgba(79,142,247,.25); border-radius: 8px;
+      padding: 10px 14px; margin-bottom: 16px;
+      font-size: 0.85rem; color: var(--text); line-height: 1.5;
     }
+    .lesson-objective-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin-bottom: 3px; }
+
+    .lesson-divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+    .lesson-content {
+      font-size: 0.83rem; line-height: 1.7; color: var(--text2);
+      white-space: pre-wrap; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px; overflow-x: auto;
+    }
+
+    #lesson-actions {
+      padding: 14px 20px 16px; border-top: 1px solid var(--border);
+      background: var(--surface3); flex-shrink: 0;
+    }
+    .lesson-prompts-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text3); margin-bottom: 8px; }
+    #lesson-quick-prompts { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
     .qp-btn {
-      font-size: 0.78rem; padding: 5px 11px; border-radius: 16px;
+      font-size: 0.76rem; padding: 5px 11px; border-radius: 14px;
       border: 1px solid var(--border); background: var(--surface2);
       color: var(--text2); cursor: pointer; transition: all .12s;
     }
-    .qp-btn:hover { border-color: var(--accent); color: var(--text); }
+    .qp-btn:hover { border-color: var(--accent); color: var(--text); background: var(--surface); }
 
-    /* Messages */
+    .lesson-footer { display: flex; align-items: center; gap: 8px; }
+    #mark-done-btn {
+      flex: 1; font-size: 0.8rem; padding: 7px 12px; border-radius: 6px;
+      border: 1px solid var(--border); background: none; color: var(--text2);
+      cursor: pointer; transition: all .12s; text-align: center;
+    }
+    #mark-done-btn:hover { border-color: var(--green); color: var(--green); }
+    #mark-done-btn.done { background: var(--green); border-color: var(--green); color: #000; font-weight: 600; }
+    #doc-link {
+      font-size: 0.78rem; color: var(--text3); text-decoration: none;
+      padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
+      white-space: nowrap; transition: all .12s;
+    }
+    #doc-link:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* ── Chat Panel (Right) ── */
+    #chat-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 280px; }
+
     #messages {
       flex: 1; overflow-y: auto; padding: 20px;
-      display: flex; flex-direction: column; gap: 16px;
+      display: flex; flex-direction: column; gap: 14px;
     }
-    .msg { display: flex; gap: 12px; max-width: 860px; }
+
+    .msg { display: flex; gap: 10px; max-width: 780px; }
     .msg.user { flex-direction: row-reverse; align-self: flex-end; }
     .msg-avatar {
-      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;
     }
     .msg.assistant .msg-avatar { background: var(--accent2); color: #fff; }
     .msg.user .msg-avatar { background: var(--accent); color: #fff; }
     .msg-bubble {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 12px 16px; font-size: 0.9rem; line-height: 1.65;
-      max-width: calc(100% - 44px);
+      border-radius: 12px; padding: 11px 15px; font-size: 0.875rem; line-height: 1.65;
+      max-width: calc(100% - 40px);
     }
-    .msg.user .msg-bubble { background: var(--accent); border-color: transparent; color: #fff; }
+    .msg.user .msg-bubble { background: var(--accent); border-color: transparent; color: #fff; border-radius: 12px 2px 12px 12px; }
+    .msg.assistant .msg-bubble { border-radius: 2px 12px 12px 12px; }
 
-    /* Markdown inside bubbles */
-    .msg-bubble h1, .msg-bubble h2, .msg-bubble h3 { margin: 12px 0 6px; font-size: 1rem; }
-    .msg-bubble p { margin-bottom: 10px; }
+    /* Markdown in bubbles */
+    .msg-bubble p { margin-bottom: 8px; }
     .msg-bubble p:last-child { margin-bottom: 0; }
-    .msg-bubble ul, .msg-bubble ol { margin: 8px 0 8px 20px; }
-    .msg-bubble li { margin-bottom: 4px; }
-    .msg-bubble code:not(.hljs) {
-      background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
-      font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.85em;
-      color: #a5d6ff;
+    .msg-bubble ul, .msg-bubble ol { margin: 6px 0 6px 18px; }
+    .msg-bubble li { margin-bottom: 3px; }
+    .msg-bubble h1, .msg-bubble h2, .msg-bubble h3 { margin: 10px 0 5px; font-size: 0.95rem; }
+    .msg-bubble code:not(pre code) {
+      background: var(--code-bg); padding: 1px 5px; border-radius: 3px;
+      font-family: 'Cascadia Code', monospace; font-size: 0.83em; color: var(--accent);
     }
-    .msg.user .msg-bubble code:not(.hljs) { background: rgba(0,0,0,.25); color: #e2e8f0; }
-    .code-block-wrap { position: relative; margin: 10px 0; }
+    .msg.user .msg-bubble code:not(pre code) { background: rgba(0,0,0,.2); color: #e2e8f0; }
+    .code-block-wrap { position: relative; margin: 8px 0; }
     .code-block-wrap pre {
       background: var(--code-bg) !important; border: 1px solid var(--border);
-      border-radius: 8px; padding: 14px 16px; overflow-x: auto;
-      font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.82rem;
-      line-height: 1.55; color: #c9d1d9;
+      border-radius: 7px; padding: 12px 14px; overflow-x: auto;
+      font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.8rem;
+      line-height: 1.55; color: var(--text);
     }
     .copy-btn {
-      position: absolute; top: 8px; right: 8px; font-size: 0.72rem;
-      padding: 3px 9px; border-radius: 5px; border: 1px solid var(--border);
+      position: absolute; top: 7px; right: 7px; font-size: 0.7rem;
+      padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border);
       background: var(--surface); color: var(--text3); cursor: pointer; transition: all .12s;
     }
-    .copy-btn:hover { color: var(--text); border-color: var(--text3); }
+    .copy-btn:hover { color: var(--text); }
     .copy-btn.copied { color: var(--green); border-color: var(--green); }
-    .msg-bubble blockquote {
-      border-left: 3px solid var(--accent); padding-left: 12px;
-      color: var(--text2); margin: 8px 0;
-    }
+    .msg-bubble blockquote { border-left: 3px solid var(--accent); padding-left: 10px; color: var(--text2); margin: 6px 0; }
 
     /* Typing indicator */
-    .typing-dot {
-      display: inline-block; width: 6px; height: 6px; background: var(--text3);
-      border-radius: 50%; margin: 0 2px; animation: bounce .9s infinite;
-    }
+    .typing-dot { display: inline-block; width: 5px; height: 5px; background: var(--text3); border-radius: 50%; margin: 0 2px; animation: bounce .9s infinite; }
     .typing-dot:nth-child(2) { animation-delay: .15s; }
     .typing-dot:nth-child(3) { animation-delay: .3s; }
-    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
 
-    /* Input area */
+    /* Input */
     #input-area {
-      padding: 12px 20px 16px; border-top: 1px solid var(--border);
+      padding: 10px 16px 14px; border-top: 1px solid var(--border);
       background: var(--surface); flex-shrink: 0;
     }
     .input-row { display: flex; gap: 8px; }
     #user-input {
-      flex: 1; padding: 10px 14px; background: var(--bg);
+      flex: 1; padding: 9px 13px; background: var(--bg);
       border: 1px solid var(--border); border-radius: 8px; color: var(--text);
-      font-size: 0.9rem; resize: none; min-height: 44px; max-height: 150px;
+      font-size: 0.875rem; resize: none; min-height: 40px; max-height: 140px;
       font-family: inherit; line-height: 1.5;
     }
     #user-input:focus { outline: none; border-color: var(--accent); }
     #send-btn {
-      padding: 10px 18px; background: var(--accent); color: #fff;
-      border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+      padding: 9px 16px; background: var(--accent); color: #fff;
+      border: none; border-radius: 8px; cursor: pointer; font-size: 0.875rem;
       font-weight: 600; transition: opacity .15s; flex-shrink: 0;
     }
     #send-btn:hover { opacity: .88; }
     #send-btn:disabled { opacity: .4; cursor: not-allowed; }
-    .input-footer {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-top: 8px; font-size: 0.75rem; color: var(--text3);
-    }
-    #new-session-btn {
-      background: none; border: none; color: var(--text3); cursor: pointer;
-      font-size: 0.75rem; text-decoration: underline;
-    }
+    .input-footer { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.72rem; color: var(--text3); }
+    #new-session-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 0.72rem; text-decoration: underline; }
     #new-session-btn:hover { color: var(--text2); }
 
-    /* Welcome / empty state */
-    .welcome-msg {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 20px 24px; color: var(--text2);
-      font-size: 0.9rem; line-height: 1.65; max-width: 640px;
-    }
-    .welcome-msg strong { color: var(--text); }
+    /* Sidebar overlay for mobile */
+    #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99; }
+    #sidebar-overlay.visible { display: block; }
 
     /* Mobile */
-    @media (max-width: 680px) {
+    @media (max-width: 900px) {
+      #lesson-panel { width: 320px; }
+    }
+    @media (max-width: 700px) {
       #hamburger { display: block; }
-      #sidebar {
+      #course-map {
         position: fixed; left: 0; top: 0; height: 100vh; z-index: 100;
-        transform: translateX(-100%); width: var(--sidebar-w) !important;
+        transform: translateX(-100%); width: var(--map-w) !important;
+        box-shadow: 4px 0 20px rgba(0,0,0,.4);
       }
-      #sidebar.mobile-open { transform: translateX(0); }
-      #sidebar-overlay {
-        display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99;
-      }
-      #sidebar-overlay.visible { display: block; }
+      #course-map.open { transform: translateX(0); }
+      #lesson-panel { display: none; }
+      #lesson-panel.mobile-show { display: flex; position: fixed; inset: 0; top: 50px; z-index: 98; width: 100% !important; }
     }
   </style>
 </head>
 <body>
 
-<!-- API Key Entry Screen -->
+<!-- API Key Entry -->
 <div id="key-screen">
   <div class="key-card">
     <h1>ZDK Training Assistant</h1>
-    <p>Enter your Anthropic API key to start. Your key is sent directly to the Anthropic API and never stored on any server.</p>
+    <p>Enter your Anthropic API key to start. Your key goes directly to the Anthropic API and is never stored on any server.</p>
     <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" />
     <label class="remember-row">
-      <input type="checkbox" id="remember-key"> Remember key in this browser (localStorage)
+      <input type="checkbox" id="remember-key"> Remember key in this browser
     </label>
     <button class="btn-primary" id="start-btn">Start Learning</button>
-    <p class="key-note">
-      Keys are per-student — each student uses their own key. Estimated cost: $0.05–0.20 per full tutorial session.
-      Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>.
-    </p>
+    <p class="key-note">Each student uses their own key. Estimated cost: $0.05–0.20 per full tutorial session. Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>.</p>
   </div>
 </div>
 
@@ -276,39 +324,100 @@
 <div id="app">
   <div id="sidebar-overlay"></div>
 
-  <nav id="sidebar">
-    <div class="sidebar-header">
-      <span class="sidebar-title">ZDK Tutorials</span>
-      <button class="sidebar-key-btn" id="change-key-btn">Change Key</button>
-    </div>
-    <div class="sidebar-nav" id="sidebar-nav"></div>
-  </nav>
+  <!-- Global Header -->
+  <header id="app-header">
+    <button id="hamburger">☰</button>
+    <div class="app-title">ZDK <span>Training</span></div>
+    <button id="guide-btn">Guide Me</button>
+    <button id="theme-btn" title="Toggle dark mode">☀️</button>
+    <button id="change-key-btn">API Key</button>
+  </header>
 
-  <div id="main">
-    <div class="top-bar">
-      <button id="hamburger">☰</button>
-      <span id="step-title">Select a step</span>
-      <a id="doc-link" href="#" target="_blank">Docs ↗</a>
-      <button id="guide-btn">Guide Me</button>
-      <button id="mark-done-btn">Mark complete</button>
-    </div>
-    <div id="quick-prompts"></div>
-    <div id="messages"></div>
-    <div id="input-area">
-      <div class="input-row">
-        <textarea id="user-input" placeholder="Ask a question…" rows="1"></textarea>
-        <button id="send-btn">Send</button>
+  <!-- Three Panels -->
+  <div id="panels">
+
+    <!-- Left: Course Map -->
+    <nav id="course-map">
+      <div id="course-map-nav"></div>
+    </nav>
+
+    <!-- Middle: Lesson Panel -->
+    <div id="lesson-panel">
+      <div id="lesson-scroll">
+        <div class="lesson-track-badge">
+          <span class="lesson-track-dot"></span>
+          <span id="lesson-track-name">Select a step</span>
+        </div>
+        <h2 id="lesson-title">Welcome to ZDK Training</h2>
+        <div class="lesson-objective">
+          <div class="lesson-objective-label">Objective</div>
+          <div id="lesson-objective-text">Select a step from the course map to begin.</div>
+        </div>
+        <div class="lesson-divider"></div>
+        <pre class="lesson-content" id="lesson-content-body">← Choose a step from the left panel to load the lesson content.</pre>
       </div>
-      <div class="input-footer">
-        <span id="status-text"></span>
-        <button id="new-session-btn">New session</button>
+      <div id="lesson-actions">
+        <div class="lesson-prompts-label">Ask the instructor</div>
+        <div id="lesson-quick-prompts"></div>
+        <div class="lesson-footer">
+          <button id="mark-done-btn">Mark complete</button>
+          <a id="doc-link" href="#" target="_blank">Docs ↗</a>
+        </div>
       </div>
     </div>
+
+    <!-- Right: Chat -->
+    <div id="chat-panel">
+      <div id="messages"></div>
+      <div id="input-area">
+        <div class="input-row">
+          <textarea id="user-input" placeholder="Ask the instructor…" rows="1"></textarea>
+          <button id="send-btn">Send</button>
+        </div>
+        <div class="input-footer">
+          <span id="status-text"></span>
+          <button id="new-session-btn">New session</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script>
-// ── Step Definitions ─────────────────────────────────────────────────────────
+// ── Prerequisites map ─────────────────────────────────────────────────────────
+
+const PREREQUISITES = {
+  'prereq-get-started':      'prereq-dev-env',
+  'snmp-overview':           'prereq-get-started',
+  'snmp-tools':              'snmp-overview',
+  'snmp-device-monitoring':  'snmp-tools',
+  'snmp-device-modeling':    'snmp-device-monitoring',
+  'snmp-component-modeling': 'snmp-device-modeling',
+  'snmp-component-monitoring':'snmp-component-modeling',
+  'snmp-traps':              'snmp-component-monitoring',
+  'http-overview':           'snmp-traps',
+  'http-nws-api':            'http-overview',
+  'http-create-zenpack':     'http-nws-api',
+  'http-modeler-plugin':     'http-create-zenpack',
+  'http-add-device':         'http-modeler-plugin',
+  'http-plugin-events':      'http-add-device',
+  'http-plugin-datapoints':  'http-plugin-events',
+  'http-plugin-modeling':    'http-plugin-datapoints',
+};
+
+function isLocked(stepId) {
+  const req = PREREQUISITES[stepId];
+  return req ? !progress[req] : false;
+}
+function prereqLabel(stepId) {
+  const req = PREREQUISITES[stepId];
+  if (!req) return '';
+  const s = STEPS.find(s => s.id === req);
+  return s ? s.label : req;
+}
+
+// ── Instructor Base ───────────────────────────────────────────────────────────
 
 const INSTRUCTOR_BASE = `You are an expert ZDK (ZenPack Development Kit) instructor for Zenoss. Your students are Zenoss customers learning to build custom ZenPacks. They are working through hands-on tutorials on their own Zenoss development server.
 
@@ -340,15 +449,17 @@ Dev environment facts (answer setup questions from any step):
     chown -R zenoss:zenoss /z
     Edit /etc/default/serviced, add: SERVICED_OPTS="--mount *,/z,/z"
     Restart serviced after this change
-- Install ZenPackLib (run as zenoss user, inside Zope):
+- Install ZenPackLib (run as zenoss user):
     serviced service run zope zenpack-manager install ZenPacks.zenoss.ZenPackLib-2.1.1.egg
-- Useful bash aliases students should add to .bashrc:
+- Useful bash aliases to add to .bashrc:
     alias zendmd='serviced service run zope zendmd'
     alias zenmodeler='serviced service run zope zenmodeler'
     alias zenpack='serviced service run zope zenpack'
     alias zendisc='serviced service run zope zendisc'
-- For debugging: reduce Zope instances to 1 (allows pdb breakpoints); set collector services to manual start to save resources
+- For debugging: reduce Zope instances to 1 (allows pdb breakpoints); set collector services to manual start
 - All tutorial work happens as the zenoss user inside /z`;
+
+// ── Step Definitions ──────────────────────────────────────────────────────────
 
 const STEPS = [
   // ── Prerequisites ──
@@ -357,6 +468,7 @@ const STEPS = [
     id: 'prereq-background',
     label: 'What is ZDK?',
     docUrl: 'https://zenpacks.zenoss.io/zdk/background/',
+    objective: 'Understand what the ZDK is, what it can build, and whether it\'s right for you',
     greeting: "Before we start building, let's make sure you're in the right place. Quick question: are you here to build a custom ZenPack that extends Zenoss, or are you still figuring out if ZDK is the right tool for your situation?",
     quickPrompts: ["I'm building a ZenPack — let's go", "What exactly is a ZenPack?", "Is ZDK right for my use case?", "What will I be able to build?"],
     context: `CURRENT LESSON: ZDK Background — What is the ZenPack Development Kit?
@@ -383,16 +495,15 @@ Who should use ZDK:
 - You want zProperties in your ZenPack
 - You need relationships between device types and components
 
-Even experienced developers use Python to extend the functionality that zenpacklib provides — YAML and Python complement each other.
-
 ZenPack naming convention: ZenPacks.<organization>.<Name>
-Examples: ZenPacks.training.NetBotz, ZenPacks.zenoss.ZenPackLib, ZenPacks.acme.Widgeter`
+Examples: ZenPacks.training.NetBotz, ZenPacks.zenoss.ZenPackLib`
   },
   {
     track: 'Prerequisites',
     id: 'prereq-dev-env',
     label: 'Dev Environment Setup',
     docUrl: 'https://zenpacks.zenoss.io/zdk/dev-env/',
+    objective: 'Configure your Zenoss server with the /z workspace, zenoss user, and bash aliases for ZenPack development',
     greeting: "Dev environment setup — everything else depends on this being right. First question: do you have a running Zenoss instance (Resource Manager or Collection Zone) with Control Center/serviced accessible? Answer yes or no and we'll work from exactly where you are.",
     quickPrompts: ["Yes, Zenoss is running", "No — I need Zenoss installed first", "Walk me through /z setup", "I hit an error"],
     context: `CURRENT LESSON: Dev Environment Setup
@@ -401,24 +512,18 @@ Reference: https://zenpacks.zenoss.io/zdk/dev-env/
 
 What "single-host Zenoss deployment" means:
   A single-host deployment runs all Zenoss services (UI, collectors, databases) on one Linux
-  server rather than spread across multiple machines. This is the recommended setup for ZDK
-  development because it's simpler to manage and debug. The underlying container orchestration
-  layer is called Control Center (the serviced daemon) — it runs all Zenoss services as Docker
-  containers. You interact with serviced via the CLI (serviced service run ...) and a web UI
-  (typically port 443 on the host).
+  server. The underlying container layer is Control Center (the serviced daemon) — it runs
+  all Zenoss services as Docker containers. You interact with serviced via the CLI
+  (serviced service run ...) and a web UI (typically port 443 on the host).
 
-  Zenoss comes in two editions relevant to ZDK work:
+  Zenoss editions for ZDK work:
   - Resource Manager (RM): on-premise licensed product
-  - Collection Zone (CZ): the collector component, may be paired with a cloud management plane
-  Either works for ZDK development.
+  - Collection Zone (CZ): collector component, may pair with cloud management plane
 
-  Getting Zenoss installed: This requires a license and installer from Zenoss. The ZDK tutorials
-  assume Zenoss + serviced are already installed and running. If you don't have that yet, the
-  starting point is your Zenoss account rep or the Zenoss support portal for the installer package.
-  Once serviced is running and you can access the Zenoss UI, you're ready to set up the dev
-  environment below.
+  Getting Zenoss installed requires a license and installer from Zenoss. Once serviced is
+  running and you can access the Zenoss UI, you're ready for the steps below.
 
-System requirements for the dev environment on top of a running Zenoss:
+System requirements:
   - 4 CPU cores minimum
   - 20 GB RAM
   - 75 GB storage
@@ -427,7 +532,6 @@ System requirements for the dev environment on top of a running Zenoss:
 Step 1 — Create the zenoss user with specific UID/GID:
   groupadd --gid=1206 zenoss
   adduser --uid=1337 --gid=1206 zenoss
-  Add zenoss to groups: wheel, docker, serviced
   usermod -aG wheel zenoss
   usermod -aG docker zenoss
   usermod -aG serviced zenoss
@@ -435,15 +539,14 @@ Step 1 — Create the zenoss user with specific UID/GID:
 Step 2 — Create the /z shared directory:
   mkdir -p /z
   chown -R zenoss:zenoss /z
-  This directory is accessible both on the host and inside containers.
+  Accessible both on the host and inside all containers.
 
 Step 3 — Configure serviced to mount /z into containers:
   Edit /etc/default/serviced
-  Add or update: SERVICED_OPTS="--mount *,/z,/z"
-  Then restart serviced: systemctl restart serviced
-  This makes /z available at /z inside every service container.
+  Add: SERVICED_OPTS="--mount *,/z,/z"
+  Then: systemctl restart serviced
 
-Step 4 — Add bash aliases (add to /home/zenoss/.bashrc):
+Step 4 — Add bash aliases to /home/zenoss/.bashrc:
   alias zendmd='serviced service run zope zendmd'
   alias zenmodeler='serviced service run zope zenmodeler'
   alias zenpack='serviced service run zope zenpack'
@@ -451,21 +554,22 @@ Step 4 — Add bash aliases (add to /home/zenoss/.bashrc):
   Then: source ~/.bashrc
 
 Step 5 — Optimize for development:
-  - Reduce Zope instances to 1: enables pdb (Python debugger) breakpoints
-  - Set collector services (zenperfsnmp, zenmodeler, etc.) to manual start to save RAM
-  Both settings are in the Zenoss Control Plane UI under service configuration.
+  - Reduce Zope instances to 1 (enables pdb breakpoints)
+  - Set collector services to manual start (saves RAM)
+  Both in the Zenoss Control Plane UI under service configuration.
 
 Common gotchas:
-  - UID 1337 and GID 1206 must match exactly — Zenoss containers expect these values
-  - /z must be created BEFORE restarting serviced or the mount fails silently
-  - All tutorial work should be done as the zenoss user (not root)
-  - If /z isn't visible inside a container, check the SERVICED_OPTS line and restart serviced`
+  - UID 1337 and GID 1206 must match exactly
+  - /z must exist BEFORE restarting serviced
+  - All tutorial work as the zenoss user (not root)
+  - If /z isn't visible inside a container, check SERVICED_OPTS and restart serviced`
   },
   {
     track: 'Prerequisites',
     id: 'prereq-get-started',
     label: 'Getting Started',
     docUrl: 'https://zenpacks.zenoss.io/zdk/get-started/',
+    objective: 'Install ZenPackLib, verify your environment, and understand the core development workflow',
     greeting: "Last prerequisite before the tutorials. Log into your dev server as the zenoss user and run this:\n\n```\nzenpacklib --version\n```\n\nTell me what you see — we'll know immediately if ZenPackLib is ready or needs installing.",
     quickPrompts: ["Walk me through ZenPackLib install", "Got an error / command not found", "It's installed — what's next?", "How do I switch to the zenoss user?"],
     context: `CURRENT LESSON: Getting Started with ZDK
@@ -480,48 +584,33 @@ Step 1 — Install ZenPackLib (run as zenoss user):
 
 Step 2 — Verify zenpacklib is available:
   zenpacklib --version
-  (uses the alias set up in dev environment)
 
 Step 3 — Create a new ZenPack:
   cd /z
   zenpacklib --create ZenPacks.training.NetBotz
-  This generates:
-    ZenPacks.training.NetBotz/
-      setup.py
-      MANIFEST.in
-      ZenPacks/training/NetBotz/
-        __init__.py
-        zenpack.yaml
-        modeler/
-        datasources/
-        tests/
+  Generates: setup.py, MANIFEST.in, ZenPacks/training/NetBotz/__init__.py,
+             zenpack.yaml, modeler/, datasources/, tests/
 
-Step 4 — Set environment variables for convenience:
+Step 4 — Set environment variables:
   export ZP_TOP_DIR=/z/ZenPacks.training.NetBotz
   export ZP_DIR=$ZP_TOP_DIR/ZenPacks/training/NetBotz
-  Add these to .bashrc to persist across sessions.
+  Add to .bashrc to persist.
 
 Step 5 — Validate zenpack.yaml:
   zenpacklib --lint $ZP_DIR/zenpack.yaml
-  Returns silently on success; prints errors if something is wrong.
-  Common error: "Unrecognized parameter" = typo in a key name.
+  Silent = success. Errors print the problem line.
 
 Step 6 — Install in development mode:
   zenpack --link --install $ZP_TOP_DIR
   serviced service restart Zope
-  --link flag = developer mode: Python file changes take effect without reinstall.
-  zenpack.yaml changes still require reinstall.
-
-Step 7 — Reinstall after zenpack.yaml changes:
-  zenpack --link --install $ZP_TOP_DIR
-  serviced service restart Zope
-  (restart zenhub too if modeler or datasource plugins changed)
+  --link = dev mode: Python file changes don't need reinstall.
+  zenpack.yaml changes DO require reinstall.
 
 Common gotchas:
-  - Run zenpacklib --create from /z, not from inside the ZenPack directory
+  - Run zenpacklib --create from /z, not inside the ZenPack directory
   - Always work as the zenoss user
-  - --link is critical for dev mode — without it, Python edits require a full reinstall
-  - After install, Zope restart is mandatory before changes take effect in the UI`
+  - --link is critical for dev mode
+  - Zope restart is mandatory after install`
   },
 
   // ── SNMP Track ──
@@ -530,11 +619,13 @@ Common gotchas:
     id: 'snmp-overview',
     label: 'Overview',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/monitoring-an-snmp-device/',
+    objective: 'Understand the full SNMP tutorial arc — 6 sequential steps building one complete ZenPack',
     greeting: "The SNMP tutorial builds a complete ZenPack in 6 sequential steps — tools, monitoring, device modeling, component modeling, component monitoring, and traps. Each step builds directly on the last, so work through them in order. Have you finished the Prerequisites (dev environment + Getting Started)? Say yes and we'll jump straight into Step 1.",
     quickPrompts: ["Yes — let's start Step 1", "I still need to do the prerequisites", "What exactly are we building?", "What is a ZenPack?"],
     context: `CURRENT LESSON: SNMP Tutorial Overview
 
-This tutorial builds a ZenPack to monitor a NetBotz environmental sensor device using SNMP. The NetBotz monitors temperature, humidity, dew point, audio levels, and air flow.
+This tutorial builds a ZenPack to monitor a NetBotz environmental sensor device using SNMP.
+The NetBotz monitors temperature, humidity, dew point, audio levels, and air flow.
 
 Tutorial structure (6 steps):
 1. SNMP Tools — install and use snmpwalk, snmptranslate, snmpsim
@@ -556,6 +647,7 @@ Key concepts:
     id: 'snmp-tools',
     label: 'Step 1: SNMP Tools',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/tools/',
+    objective: 'Install SNMP CLI tools for inspecting device OIDs and MIBs before writing any config',
     greeting: "Step 1: Install the SNMP command-line tools — you'll use these throughout the tutorial to inspect device OIDs before writing any config. Run this as root and tell me what you see:\n\n```\nyum -y install net-snmp-utils\n```",
     quickPrompts: ["Walk me through this step", "I got an error", "Tools installed — what's next?", "What is snmpwalk used for?"],
     context: `CURRENT LESSON: SNMP Tools
@@ -586,7 +678,7 @@ Key commands:
     — converts name to numeric OID (-On flag = output numeric)
 
   smidump -f python NETBOTZV2-MIB.mib
-    — dumps MIB file contents in Python format, useful for exploring structure
+    — dumps MIB file contents in Python format
 
 Create /etc/snmp/snmp.conf to set defaults:
   defVersion v2c
@@ -604,6 +696,7 @@ Common gotchas:
     id: 'snmp-device-monitoring',
     label: 'Step 2: Device Monitoring',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/device-monitoring/',
+    objective: 'Create ZenPacks.training.NetBotz and build the first monitoring template with datasource, threshold, and graph',
     greeting: "Step 2: Create the ZenPack and install it. Run these as the zenoss user and tell me what happens:\n\n```\nzenpacklib --create ZenPacks.training.NetBotz\nzenpack --link --install ZenPacks.training.NetBotz\nserviced service restart Zope\n```",
     quickPrompts: ["Walk me through this step", "I got an error", "ZenPack installed — what's next?", "What does --link do?"],
     context: `CURRENT LESSON: Device Monitoring
@@ -615,26 +708,25 @@ Goal: Create the ZenPack, a device class, and a monitoring template with SNMP da
    zenpack --link --install ZenPacks.training.NetBotz
    serviced service restart Zope
 
-2. Create a device class /NetBotz in the Zenoss UI (Infrastructure view).
+2. Create device class /NetBotz in the Zenoss UI (Infrastructure view).
    Configure it:
    - Modeler Plugins: remove zenoss.snmp.RouteMap (not needed for NetBotz)
    - zSnmpMonitorIgnore: false (ensure SNMP monitoring is enabled)
-   - Set values LOCALLY on the device class to avoid changing global defaults
+   - Set values LOCALLY to avoid changing global defaults
 
 3. Add a device to the class:
    zendisc run --deviceclass=/NetBotz --device=172.17.0.1
 
-4. Create a monitoring template named "Device" under /NetBotz:
+4. Create monitoring template "Device" under /NetBotz:
 
    SNMP Datasource:
    - Name: snmpInTotalReqVars  (name after the MIB OID)
    - Type: SNMP
    - OID: 1.3.6.1.2.1.11.9.0  (trailing .0 = device-level scalar)
-   - Always use snmpwalk to verify the exact OID
 
    Datapoint:
    - For counter values: set RRD Type to DERIVE, RRD Minimum to 0
-   - DERIVE handles device reboots (counters reset to 0) correctly
+   - DERIVE handles device reboots correctly
 
    Threshold (MinMaxThreshold):
    - Set max value, assign to an event class
@@ -646,8 +738,7 @@ Goal: Create the ZenPack, a device class, and a monitoring template with SNMP da
    zenperfsnmp run -v10 --device=Netbotz01 | grep "MetricWriter"
 
 6. Export the ZenPack:
-   Advanced > ZenPacks > select ZenPacks.training.NetBotz > Export ZenPack
-   This writes objects.xml into the ZenPack directory.
+   Advanced > ZenPacks > ZenPacks.training.NetBotz > Export ZenPack
 
 Common gotchas:
   - Device-level (scalar) OIDs MUST end in .0
@@ -660,11 +751,13 @@ Common gotchas:
     id: 'snmp-device-modeling',
     label: 'Step 3: Device Modeling',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/device-modeling/',
+    objective: 'Add a custom device attribute (temp_sensor_count) and write your first SNMP modeler plugin',
     greeting: "Step 3: We're adding a custom attribute to the device — temp_sensor_count — and writing a modeler plugin that reads it from SNMP. Open zenpack.yaml in your editor. Tell me when you have it open and I'll show you exactly what to add.",
     quickPrompts: ["Walk me through this step", "I got an error", "Show me the zenpack.yaml changes", "What is device modeling?"],
     context: `CURRENT LESSON: Device Modeling
 
-Goal: Create a custom Device subclass (NetBotzDevice) with a temp_sensor_count property, and a modeler plugin that reads it via SNMP.
+Goal: Create a custom Device subclass (NetBotzDevice) with a temp_sensor_count property,
+and a modeler plugin that reads it via SNMP.
 
 1. Update zenpack.yaml — add a Device subclass:
    classes:
@@ -676,8 +769,8 @@ Goal: Create a custom Device subclass (NetBotzDevice) with a temp_sensor_count p
            label: "# Temperature Sensors"
 
 2. Configure the device class to use the new Python class:
-   - In the /NetBotz device class, set: zPythonClass: ZenPacks.training.NetBotz.NetBotzDevice
-   - Important: zPythonClass is only applied when a device is CREATED in a class or MOVED into one
+   In /NetBotz device class, set: zPythonClass: ZenPacks.training.NetBotz.NetBotzDevice
+   NOTE: zPythonClass is only applied when a device is CREATED in a class or MOVED into one.
 
 3. Reinstall and restart:
    zenpack --link --install ZenPacks.training.NetBotz
@@ -686,15 +779,15 @@ Goal: Create a custom Device subclass (NetBotzDevice) with a temp_sensor_count p
 4. Reset existing device's Python class if needed:
    zendmd
    > d = find('Netbotz01')
-   > d.__class__ = d.zPythonClass()  # or rebuild manually
+   > d.__class__ = d.zPythonClass()
    > commit()
 
-5. Find the temperature sensor table OID using smidump and snmpwalk:
+5. Find the temperature sensor table OID:
    snmpwalk 172.17.0.1 NETBOTZV2-MIB::tempSensorTable
-   — The tempSensorTable is at OID 1.3.6.1.4.1.5528.100.4.1.1.1
-   — Count the rows returned; the NetBotz has 14 sensors
+   — tempSensorTable is at OID 1.3.6.1.4.1.5528.100.4.1.1.1
+   — Count rows returned; the NetBotz has 14 sensors
 
-6. Create the modeler plugin at $ZP_DIR/modeler/plugins/training/snmp/NetBotz.py:
+6. Create $ZP_DIR/modeler/plugins/training/snmp/NetBotz.py:
    from Products.DataCollector.plugins.CollectorPlugin import SnmpPlugin, GetTableMap
    from Products.DataCollector.plugins.DataMaps import ObjectMap
 
@@ -702,18 +795,11 @@ Goal: Create a custom Device subclass (NetBotzDevice) with a temp_sensor_count p
        snmpGetTableMaps = (
            GetTableMap('tempSensorTable', '1.3.6.1.4.1.5528.100.4.1.1.1', {'.1': 'tempSensorId'}),
        )
-
        def process(self, device, results, log):
            temp_sensors, _ = results.get('tempSensorTable', ({}, None))
            return ObjectMap({'temp_sensor_count': len(temp_sensors)})
 
-   The process method can return:
-   - None (no changes)
-   - ObjectMap (apply to device)
-   - RelationshipMap (apply to a relationship)
-   - A list of the above
-
-7. Register the plugin in zenpack.yaml device_classes section:
+7. Register in zenpack.yaml:
    device_classes:
      /NetBotz:
        zProperties:
@@ -721,28 +807,25 @@ Goal: Create a custom Device subclass (NetBotzDevice) with a temp_sensor_count p
 
 8. Test:
    zenmodeler run --device=Netbotz01
-   zendmd
-   > d = find('Netbotz01')
-   > d.temp_sensor_count  # should return 14
-
-9. Customize device overview (optional):
-   Create $ZP_DIR/resources/device.js using ExtJS to add/remove fields from the overview panel.
+   zendmd > d = find('Netbotz01') > d.temp_sensor_count  # should return 14
 
 Common gotchas:
-  - Modeler plugin file path must match class name exactly (NetBotz.py → class NetBotz)
+  - Modeler plugin file path must match class name (NetBotz.py → class NetBotz)
   - Must restart Zope AND zenhub after plugin changes
-  - Always call zenmodeler after model changes to repopulate data`
+  - Always call zenmodeler after model changes`
   },
   {
     track: 'SNMP Tutorial',
     id: 'snmp-component-modeling',
     label: 'Step 4: Component Modeling',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/component-modeling/',
+    objective: 'Define temperature sensors as components with a 1:MC relationship to the device',
     greeting: "Step 4: Define temperature sensors as their own component type with a one-to-many relationship to the device. Open zenpack.yaml — we're adding a new class and a relationship line. Tell me when it's open.",
     quickPrompts: ["Walk me through this step", "I got an error", "What is a component?", "What does 1:MC mean?"],
     context: `CURRENT LESSON: Component Modeling
 
-Goal: Define NetBotzTemperatureSensor as a component class, relate it to NetBotzDevice (1:MC), and update the modeler to discover sensor instances.
+Goal: Define NetBotzTemperatureSensor as a component class, relate it to NetBotzDevice (1:MC),
+and update the modeler to discover sensor instances.
 
 1. Update zenpack.yaml — add the component class:
    classes:
@@ -762,8 +845,8 @@ Goal: Define NetBotzTemperatureSensor as a component class, relate it to NetBotz
 
    class_relationships:
      - NetBotzDevice 1:MC NetBotzTemperatureSensor
-   — "1:MC" = one device can contain MANY components (the most common relationship type)
-   — The relname on the component side is automatically pluralized (netBotzTemperatureSensors)
+   — 1:MC = one device can contain MANY components
+   — relname on component side is auto-pluralized (netBotzTemperatureSensors)
 
 2. Reinstall:
    zenpack --link --install ZenPacks.training.NetBotz
@@ -775,27 +858,15 @@ Goal: Define NetBotzTemperatureSensor as a component class, relate it to NetBotz
    > d.buildRelations()
    > commit()
 
-4. Available SNMP OIDs for sensors (from smidump/snmpwalk):
-   tempSensorId      — unique sensor identifier
-   tempSensorValue   — raw integer temperature
-   tempSensorLabel   — human-readable name
-   tempSensorEncId   — enclosure ID
-   tempSensorPortId  — port ID
-
-5. Update the modeler plugin to return a RelationshipMap:
-   from Products.DataCollector.plugins.DataMaps import ObjectMap, RelationshipMap
-
+4. Update modeler plugin to return a RelationshipMap:
    class NetBotz(SnmpPlugin):
        relname = 'netBotzTemperatureSensors'
        modname = 'ZenPacks.training.NetBotz.NetBotzTemperatureSensor'
-
        snmpGetTableMaps = (
-           GetTableMap('tempSensorTable',
-               '1.3.6.1.4.1.5528.100.4.1.1.1',
+           GetTableMap('tempSensorTable', '1.3.6.1.4.1.5528.100.4.1.1.1',
                {'.1': 'tempSensorId', '.3': 'tempSensorLabel',
                 '.5': 'tempSensorEncId', '.6': 'tempSensorPortId'}),
        )
-
        def process(self, device, results, log):
            temp_sensors, _ = results.get('tempSensorTable', ({}, None))
            rm = self.relMap()
@@ -808,93 +879,81 @@ Goal: Define NetBotzTemperatureSensor as a component class, relate it to NetBotz
                }))
            return [ObjectMap({'temp_sensor_count': len(rm.maps)}), rm]
 
-6. Test:
+5. Test:
    zenmodeler run --device=Netbotz01
-   zendmd
-   > d = find('Netbotz01')
-   > list(d.netBotzTemperatureSensors())  # should show 14 sensors
+   zendmd > list(d.netBotzTemperatureSensors())  # should show 14 sensors
 
 Common gotchas:
   - relname must exactly match the relationship name (auto-pluralized camelCase)
   - modname must be the full dotted Python class path
   - Must call buildRelations() on existing devices after adding new relationships
-  - Use self.prepId() to sanitize component IDs (removes special chars)`
+  - Use self.prepId() to sanitize component IDs`
   },
   {
     track: 'SNMP Tutorial',
     id: 'snmp-component-monitoring',
     label: 'Step 5: Component Monitoring',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/component-monitoring/',
+    objective: 'Create a monitoring template that graphs temperature for each sensor component',
     greeting: "Step 5: Add a monitoring template that collects temperature from each sensor component. The most common gotcha here is the template name — it must match the component class label exactly with spaces removed. Ready to create it in the Zenoss UI?",
     quickPrompts: ["Walk me through this step", "I got an error", "Template created — how do I test it?", "How does template naming work?"],
     context: `CURRENT LESSON: Component Monitoring
 
-Goal: Add a monitoring template for NetBotzTemperatureSensor components that graphs temperature and triggers alerts.
+Goal: Add a monitoring template for NetBotzTemperatureSensor that graphs temperature and triggers alerts.
 
 1. Find the temperature OID:
    snmpwalk 172.17.0.1 NETBOTZV2-MIB::tempSensorValueStr
    snmptranslate -On NETBOTZV2-MIB::tempSensorValueStr
    → Base OID: 1.3.6.1.4.1.5528.100.4.1.1.1.7
-   — tempSensorValueStr returns temperature as a string in Celsius
 
-2. CRITICAL: Template naming for components:
-   - Template must be named after the component class LABEL with spaces removed
-   - NetBotzTemperatureSensor class label = "Temperature Sensor"
+2. CRITICAL — Template naming for components:
+   - Template named after the component class LABEL with spaces removed
+   - NetBotzTemperatureSensor label = "Temperature Sensor"
    - Template name = "TemperatureSensor" (no space)
-   - Or set explicitly in zenpack.yaml under the class definition
 
-3. Create the monitoring template via UI (or add to zenpack.yaml):
-
+3. Create the monitoring template:
    Datasource:
    - Name: tempSensorValueStr
    - Type: SNMP
    - OID: 1.3.6.1.4.1.5528.100.4.1.1.1.7
    — Zenoss automatically appends the component SNMP index
 
-   Datapoint:
-   - tempSensorValueStr (auto-created with datasource)
-   - RRD Type: GAUGE (temperature is not a counter)
+   Datapoint: GAUGE (temperature is not a counter)
 
    Threshold:
-   - Type: MinMaxThreshold
-   - Maximum: 32 (degrees C)
-   - Event Class: /Environ
-   - Severity: Error
+   - Type: MinMaxThreshold, Maximum: 32 (degrees C)
+   - Event Class: /Environ, Severity: Error
 
    Graph:
-   - Name: Temperature
-   - Units: degrees C
-   - Graph Point: tempSensorValueStr with format %7.2lf
+   - Name: Temperature, Units: degrees C
+   - Graph Point: tempSensorValueStr format %7.2lf
 
 4. Test:
    zenperfsnmp run -v10 --device=Netbotz01 | grep "MetricWriter"
-   — Should show temperature values being collected for each sensor
 
 5. Verify in UI:
-   - Navigate to the device > Components > Temperature Sensors
-   - Click a sensor — check Graphs tab
-   - Events tab should show threshold breaches if temp > 32°C
+   Device > Components > Temperature Sensors > Graphs tab
 
 Common gotchas:
-  - Template name case matters — must match label exactly (spaces removed)
+  - Template name case matters — match label exactly, spaces removed
   - SNMP index is appended automatically for component datasources
-  - Temperature from tempSensorValueStr includes unit string — may need parsing
-  - Don't forget to export the ZenPack after template configuration`
+  - Export the ZenPack after template configuration`
   },
   {
     track: 'SNMP Tutorial',
     id: 'snmp-traps',
     label: 'Step 6: SNMP Traps',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/traps/',
+    objective: 'Configure Zenoss to receive, decode, and classify SNMP traps from the NetBotz device',
     greeting: "Step 6 — final SNMP step: configure Zenoss to receive and decode SNMP traps. First, verify zentrap is running:\n\n```\nserviced service status zentrap\n```\n\nTell me what you see.",
     quickPrompts: ["Walk me through this step", "I got an error", "zentrap is running — what's next?", "What is an SNMP trap?"],
     context: `CURRENT LESSON: SNMP Traps
 
-Goal: Import the NETBOTZV2-MIB, simulate temperature traps, and map them to Zenoss events with proper classification.
+Goal: Import the NETBOTZV2-MIB, simulate temperature traps, and map them to Zenoss events.
 
 Prerequisites:
   - zentrap daemon must be running and listening on port 162/udp
-  - MIBs must be imported before traps can be decoded (otherwise you see raw OIDs)
+  - MIBs must be imported before traps can be decoded
 
 1. Copy MIB file into the container:
    cp NETBOTZV2-MIB.mib /z/
@@ -905,29 +964,22 @@ Prerequisites:
 
 3. Add MIB to ZenPack via UI:
    Advanced > ZenPacks > ZenPacks.training.NetBotz > Add MIB
-   — Bundles the MIB so it's installed with the ZenPack
 
 4. Simulate a simple trap:
    sudo snmptrap 172.17.0.29 0 NETBOTZV2-MIB::netBotzTempTooHigh
 
-5. Simulate a trap with variable bindings (VarBinds):
+5. Simulate a trap with variable bindings:
    sudo snmptrap 172.17.0.29 0 NETBOTZV2-MIB::netBotzTempTooHigh \
        NETBOTZV2-MIB::netBotzV2TrapSensorID s 'nbHawkEnc_1_TEMP1'
-   — Variable bindings attach context data to the trap (sensor ID, temperature, etc.)
 
 6. Check the event in Zenoss Events console.
-   Before MIB import: events show raw numeric OIDs
-   After MIB import: events show human-readable trap names
+   Before MIB import: raw numeric OIDs
+   After MIB import: human-readable trap names
 
-7. Map the event to an event class:
-   - In Events console, find the trap event
-   - Click the reclassification button
-   - Assign to an appropriate class (e.g., /Environ/Temp)
+7. Map to an event class via the reclassification button in Events console.
 
 8. Add a transform to enrich event data:
-   In the event class mapping, add a transform:
    evt.component = getattr(evt, 'netBotzV2TrapSensorID', '')
-   — This sets the event's component field from the trap's variable binding
 
 9. Add event class mappings to zenpack.yaml:
    event_classes:
@@ -941,10 +993,9 @@ Prerequisites:
              evt.component = getattr(evt, 'netBotzV2TrapSensorID', '')
 
 Common gotchas:
-  - zentrap must be running — check with: serviced service status zentrap
-  - zentrap listens on 162/udp — may need sudo for snmptrap
-  - Import MIB BEFORE simulating traps, or events won't decode
-  - Variable binding attribute names on evt object use the MIB OID name (camelCase)`
+  - zentrap must be running — serviced service status zentrap
+  - Import MIB BEFORE simulating traps
+  - Variable binding attributes on evt use the MIB OID name (camelCase)`
   },
 
   // ── HTTP Track ──
@@ -953,11 +1004,13 @@ Common gotchas:
     id: 'http-overview',
     label: 'Overview',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/monitoring-an-http-api/',
+    objective: 'Understand the HTTP tutorial arc — 7 steps building a ZenPack that monitors the NWS weather API',
     greeting: "The HTTP tutorial is more advanced and assumes you've finished the SNMP tutorial — we skip the basics and go straight into Python plugins and PythonCollector. The ZenPack monitors the National Weather Service API: weather stations as components, alerts as events, and observations as graphable datapoints. Have you completed the SNMP tutorial? Say yes and we'll start.",
     quickPrompts: ["Yes — let's start", "I haven't done SNMP yet", "What's different from SNMP?", "What is PythonCollector?"],
     context: `CURRENT LESSON: HTTP Tutorial Overview
 
-This tutorial builds a ZenPack that monitors the National Weather Service (NWS) public API — no authentication required.
+This tutorial builds a ZenPack that monitors the National Weather Service (NWS) public API.
+No authentication required.
 
 The ZenPack will:
 - Model weather stations as components (NwsStation objects on an NwsDevice)
@@ -976,7 +1029,6 @@ Tutorial structure (7 steps):
 Key differences from SNMP:
 - Uses PythonPlugin (not SnmpPlugin) for modeling
 - Uses PythonDataSourcePlugin for monitoring
-- Data is fetched via HTTP instead of SNMP
 - Requires PythonCollector ZenPack as a dependency
 - Collection runs in the zenpython service (not zenperfsnmp)
 
@@ -987,6 +1039,7 @@ ZenPack name: ZenPacks.training.NWS`
     id: 'http-nws-api',
     label: 'Step 1: NWS API',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/nws-api/',
+    objective: 'Understand the NWS API endpoints and GeoJSON response structure before writing any code',
     greeting: "Step 1: Understand the API before writing any code. Run this and tell me what you see:\n\n```\ncurl 'https://api.weather.gov/stations?state=TX' | python -m json.tool | head -60\n```\n\nWe'll walk through the response structure together.",
     quickPrompts: ["Walk me through the API structure", "I got an error", "API looks good — what's next?", "What is GeoJSON?"],
     context: `CURRENT LESSON: NWS API
@@ -999,27 +1052,20 @@ Key Endpoints:
 1. List stations by state:
    GET https://api.weather.gov/stations?state=OK,TX
    Response: GeoJSON FeatureCollection
-   Each feature.properties contains:
-   - stationIdentifier (e.g. "KTUL")
-   - name (human-readable station name)
-   - elevation
-   - timeZone
+   Each feature.properties: stationIdentifier, name, elevation, timeZone
 
 2. Station details:
    GET https://api.weather.gov/stations/KTUL
-   Response: GeoJSON Feature
-   feature.properties contains county, forecast zone, fire weather zone
+   Response: GeoJSON Feature — county, forecast zone, fire weather zone
 
-3. Active alerts by county/zone:
+3. Active alerts by zone:
    GET https://api.weather.gov/alerts/active?zone=OKC143
-   Response: FeatureCollection of alerts
    Each alert has: event, severity, effective, expires, description
    — These become Zenoss events
 
 4. Latest observations:
    GET https://api.weather.gov/stations/KDFW/observations/latest
-   Response: GeoJSON Feature
-   feature.properties contains numeric readings:
+   feature.properties numeric readings:
    - temperature.value (Celsius)
    - dewpoint.value
    - barometricPressure.value (Pascals)
@@ -1029,13 +1075,13 @@ Key Endpoints:
    - windDirection.value (degrees)
    — These become datapoints for graphing
 
-Response structure pattern:
-  All responses: { "@context": ..., "type": "Feature/FeatureCollection", "properties": {...}, "geometry": {...} }
-  For collections: response.features is an array, each with .properties
-  For single items: response.properties is the data object
+Response structure:
+  { "type": "Feature/FeatureCollection", "properties": {...}, "geometry": {...} }
+  Collections: response.features is an array, each with .properties
+  Single items: response.properties is the data
 
 zNwsStates property:
-  A lines-type zProperty will hold the states to monitor (e.g. ["TX", "OK"])
+  A lines-type zProperty holds the states to monitor (e.g. ["TX", "OK"])
   The modeler iterates these states to discover stations`
   },
   {
@@ -1043,6 +1089,7 @@ zNwsStates property:
     id: 'http-create-zenpack',
     label: 'Step 2: Create ZenPack',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/create-zenpack/',
+    objective: 'Create ZenPacks.training.NWS and write the zenpack.yaml skeleton with classes, zProperties, and relationships',
     greeting: "Step 2: Create the NWS ZenPack. Run this as the zenoss user:\n\n```\ncd /z\nzenpacklib --create ZenPacks.training.NWS\n```\n\nTell me when it's done — I'll walk you through the zenpack.yaml next.",
     quickPrompts: ["Walk me through this step", "I got an error", "ZenPack created — show me the YAML", "What is the 1:MC relationship?"],
     context: `CURRENT LESSON: Create the NWS ZenPack
@@ -1100,17 +1147,16 @@ zNwsStates property:
    serviced service restart Zope
 
 Key concepts:
-  - DEFAULTS block in zProperties applies to all zProperties in that section
+  - DEFAULTS block applies to all properties in that section
   - "lines" type = list of strings (one per line in UI)
-  - 1:MC relationship: one NwsDevice has many NwsStation components
-  - --link flag = developer mode (code changes take effect without reinstall for Python files)
-  - zenpack.yaml changes still require reinstall`
+  - --link flag = developer mode`
   },
   {
     track: 'HTTP Tutorial',
     id: 'http-modeler-plugin',
     label: 'Step 3: Modeler Plugin',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/create-modeler-plugin/',
+    objective: 'Write an async Python modeler plugin that discovers NWS weather stations via HTTP',
     greeting: "Step 3: Create the modeler plugin. Start by making the directory structure:\n\n```\nmkdir -p $ZP_DIR/modeler/plugins/NWS\ntouch $ZP_DIR/modeler/__init__.py\ntouch $ZP_DIR/modeler/plugins/__init__.py\ntouch $ZP_DIR/modeler/plugins/NWS/__init__.py\n```\n\nDone? I'll give you the full Stations.py to write next.",
     quickPrompts: ["Walk me through this step", "I got an error", "Directories created — show me Stations.py", "What is PythonPlugin?"],
     context: `CURRENT LESSON: Modeler Plugin (HTTP/Python)
@@ -1124,7 +1170,6 @@ Goal: Create a Python modeler plugin that queries the NWS API to discover weathe
    touch $ZP_DIR/modeler/plugins/NWS/__init__.py
 
 2. Create $ZP_DIR/modeler/plugins/NWS/Stations.py:
-
    import json
    from twisted.internet.defer import inlineCallbacks, returnValue, DeferredList
    from twisted.web.client import getPage
@@ -1142,13 +1187,11 @@ Goal: Create a Python modeler plugin that queries the NWS API to discover weathe
            url = 'https://api.weather.gov/stations?state={}'.format(','.join(states))
            response = yield getPage(url.encode(), headers={'Accept': 'application/geo+json'})
            data = json.loads(response)
-
            station_urls = [
                'https://api.weather.gov/stations/{}'.format(
                    f['properties']['stationIdentifier'])
                for f in data.get('features', [])
            ]
-
            details = yield DeferredList(
                [getPage(u.encode(), headers={'Accept': 'application/geo+json'})
                 for u in station_urls],
@@ -1168,8 +1211,7 @@ Goal: Create a Python modeler plugin that queries the NWS API to discover weathe
                rm.append(self.objectMap({
                    'id': self.prepId(props['stationIdentifier']),
                    'title': props.get('name', props['stationIdentifier']),
-                   'longitude': geo[0],
-                   'latitude': geo[1],
+                   'longitude': geo[0], 'latitude': geo[1],
                    'timezone': props.get('timeZone', ''),
                    'county': detail.get('county', '').split('/')[-1],
                    'nws_zone': detail.get('forecast', '').split('/')[-1],
@@ -1185,16 +1227,16 @@ Goal: Create a Python modeler plugin that queries the NWS API to discover weathe
 
 Common gotchas:
   - Class name MUST match filename (Stations.py → class Stations)
-  - getPage takes bytes in Python 2 (encode the URL)
+  - getPage takes bytes (encode the URL)
   - DeferredList returns list of (success_bool, result) tuples
-  - Must restart BOTH zope and zenhub after modeler plugin changes
-  - requiredProperties makes zNwsStates available on the device object in collect()`
+  - Must restart BOTH zope and zenhub after modeler plugin changes`
   },
   {
     track: 'HTTP Tutorial',
     id: 'http-add-device',
     label: 'Step 4: Add Device Class',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/add-device/',
+    objective: 'Configure the /NWS device class in zenpack.yaml and add api.weather.gov as a monitored device',
     greeting: "Step 4: Wire up the device class and add the device. Open zenpack.yaml — we're adding a device_classes section. Tell me when it's open and I'll show you exactly what to add.",
     quickPrompts: ["Walk me through this step", "I got an error", "Device class added — how do I add the device?", "Why disable ping and SNMP?"],
     context: `CURRENT LESSON: Add Device Class
@@ -1212,9 +1254,8 @@ Goal: Configure the /NWS device class in zenpack.yaml and add api.weather.gov as
          zCollectorPlugins:
            - NWS.Stations
 
-   Explanation:
    - zPythonClass: use our custom NwsDevice class
-   - zPingMonitorIgnore: true — don't ping api.weather.gov (irrelevant for HTTP API)
+   - zPingMonitorIgnore: true — don't ping api.weather.gov
    - zSnmpMonitorIgnore: true — no SNMP for HTTP devices
    - zCollectorPlugins: only use our NWS.Stations modeler
 
@@ -1231,9 +1272,8 @@ Goal: Configure the /NWS device class in zenpack.yaml and add api.weather.gov as
    > list(d.nwsStations())  # should list discovered stations
 
 Common gotchas:
-  - After zenpack.yaml changes, must reinstall (--link --install) and restart Zope
-  - zCollectorPlugins replaces the default list — include any other plugins you want
-  - zendisc is the simplest way to add devices from CLI; limited options vs UI
+  - After zenpack.yaml changes, must reinstall and restart Zope
+  - zCollectorPlugins replaces the default list
   - The device address (api.weather.gov) becomes the device ID in Zenoss`
   },
   {
@@ -1241,19 +1281,18 @@ Common gotchas:
     id: 'http-plugin-events',
     label: 'Step 5: Datasource (Events)',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/plugin-events/',
+    objective: 'Create a PythonCollector datasource plugin that turns weather alerts into Zenoss events',
     greeting: "Step 5: Create the events datasource plugin. First, verify PythonCollector is installed:\n\n```\nzenpack --list | grep PythonCollector\n```\n\nTell me what you see.",
     quickPrompts: ["Walk me through this step", "I got an error", "PythonCollector installed — what's next?", "What is PythonCollector?"],
     context: `CURRENT LESSON: Datasource Plugin — Events
 
-Goal: Create a PythonDataSourcePlugin that fetches NWS weather alerts and generates Zenoss events.
+Goal: Create a PythonDataSourcePlugin that fetches NWS alerts and generates Zenoss events.
 
 Prerequisites:
   - PythonCollector ZenPack must be installed
-  - Add it as a dependency in setup.py:
-    install_requires=['ZenPacks.zenoss.PythonCollector']
+  - Add to setup.py: install_requires=['ZenPacks.zenoss.PythonCollector']
 
 1. Create $ZP_DIR/dsplugins.py:
-
    import json
    from twisted.internet.defer import inlineCallbacks, returnValue
    from twisted.web.client import getPage
@@ -1285,18 +1324,17 @@ Prerequisites:
                        data['events'].append({
                            'device': config.id,
                            'component': datasource.component,
-                           'severity': 3,  # Error
+                           'severity': 3,
                            'eventKey': props.get('id', ''),
                            'eventClassKey': 'NwsAlert',
                            'summary': props.get('event', 'Weather Alert'),
                            'message': props.get('description', ''),
                        })
                except Exception as e:
-                   log.warning('Failed to collect alerts for %s: %s', county, e)
+                   log.warning('Failed: %s', e)
            returnValue(data)
 
-2. Add datasource template to zenpack.yaml:
-
+2. Add template to zenpack.yaml:
    device_classes:
      /NWS:
        templates:
@@ -1308,25 +1346,20 @@ Prerequisites:
                plugin_classname: ZenPacks.training.NWS.dsplugins.Alerts
                cycletime: "600"
 
-3. Reinstall and restart:
+3. Reinstall and test:
    zenpack --link --install $ZP_TOP_DIR
    serviced service restart zenhub
-
-4. Test:
    zenpython run -v10 --device=api.weather.gov
 
 Event fields:
-  Required: device (str), severity (0-5), summary (str, max 128 chars)
-  Deduplication: eventKey (same key = same event, gets de-duped)
-  Classification: eventClassKey (matched against event class mappings)
-  Optional: component, message, any custom fields
-
-Severity levels: 0=Clear, 1=Debug, 2=Info, 3=Warning, 4=Error, 5=Critical
+  Required: device, severity (0-5), summary (max 128 chars)
+  Deduplication: eventKey
+  Classification: eventClassKey
+  Severity: 0=Clear 1=Debug 2=Info 3=Warning 4=Error 5=Critical
 
 Common gotchas:
-  - config_key() controls how collection tasks are split — return values that uniquely identify the work
-  - params() runs with database access; collect() does not — use params() to pass DB data
-  - Must restart zenhub (not just zope) after dsplugins.py changes
+  - params() runs with DB access; collect() does not — pass DB data via params()
+  - Must restart zenhub after dsplugins.py changes
   - data = self.new_data() initializes {'events': [], 'values': {}, 'maps': []}`
   },
   {
@@ -1334,6 +1367,7 @@ Common gotchas:
     id: 'http-plugin-datapoints',
     label: 'Step 6: Datasource (Data Points)',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/plugin-data-points/',
+    objective: 'Collect numeric weather observations as graphable datapoints using the (value, N) pattern',
     greeting: "Step 6: Collect numeric weather readings as datapoints for graphing. Open dsplugins.py — we're adding a Conditions class below the Alerts class you already wrote. Tell me when it's open.",
     quickPrompts: ["Walk me through this step", "I got an error", "Show me the Conditions class", "What is the (value, 'N') pattern?"],
     context: `CURRENT LESSON: Datasource Plugin — Data Points
@@ -1341,7 +1375,6 @@ Common gotchas:
 Goal: Add a Conditions plugin that collects numeric weather observations for graphing.
 
 1. Add to $ZP_DIR/dsplugins.py:
-
    class Conditions(PythonDataSourcePlugin):
        @classmethod
        def config_key(cls, datasource, context):
@@ -1361,32 +1394,27 @@ Goal: Add a Conditions plugin that collects numeric weather observations for gra
                try:
                    response = yield getPage(url.encode(), headers={'Accept': 'application/geo+json'})
                    obs = json.loads(response)['properties']
+                   field_map = {
+                       'temperature': 'temperature', 'dewpoint': 'dewpoint',
+                       'barometricPressure': 'barometricPressure', 'visibility': 'visibility',
+                       'relativeHumidity': 'relativeHumidity', 'windSpeed': 'windSpeed',
+                       'windDirection': 'windDirection',
+                   }
                    for datapoint_id in datasource.points:
-                       # Map datapoint names to API fields
-                       field_map = {
-                           'temperature': ('temperature', 'value'),
-                           'dewpoint': ('dewpoint', 'value'),
-                           'barometricPressure': ('barometricPressure', 'value'),
-                           'visibility': ('visibility', 'value'),
-                           'relativeHumidity': ('relativeHumidity', 'value'),
-                           'windSpeed': ('windSpeed', 'value'),
-                           'windDirection': ('windDirection', 'value'),
-                       }
                        if datapoint_id in field_map:
-                           field = obs.get(field_map[datapoint_id][0], {})
+                           field = obs.get(field_map[datapoint_id], {})
                            value = field.get('value') if isinstance(field, dict) else field
                            if value is not None:
                                data['values'][datasource.component][datapoint_id] = (value, 'N')
                except Exception as e:
-                   log.warning('Failed to collect conditions for %s: %s', station_id, e)
+                   log.warning('Failed: %s', e)
            returnValue(data)
 
-   Key line: data['values'][component][datapoint_id] = (value, 'N')
+   Key: data['values'][component][datapoint_id] = (value, 'N')
    - 'N' = use current time as timestamp
-   - Use a UNIX timestamp integer instead of 'N' if you have an exact observation time
+   - Use UNIX timestamp integer for exact observation time
 
-2. Add to zenpack.yaml (inside the Station template):
-
+2. Add to zenpack.yaml Station template:
    datasources:
      conditions:
        type: Python
@@ -1408,16 +1436,6 @@ Goal: Add a Conditions plugin that collects numeric weather observations for gra
          temperature:
            dpName: conditions_temperature
            format: "%7.2lf"
-     Pressure:
-       units: Pascals
-       graphpoints:
-         barometricPressure:
-           dpName: conditions_barometricPressure
-     Humidity:
-       units: percent
-       graphpoints:
-         relativeHumidity:
-           dpName: conditions_relativeHumidity
 
 3. Reinstall and test:
    zenpack --link --install $ZP_TOP_DIR
@@ -1425,26 +1443,26 @@ Goal: Add a Conditions plugin that collects numeric weather observations for gra
    zenpython run -v10 --device=api.weather.gov
 
 Common gotchas:
-  - datapoint dpName format in graphs is: datasourceName_datapointName
-  - (value, 'N') is the required format — just the number won't work
-  - NWS API returns None for some readings — always check before storing
-  - GAUGE type for instantaneous values; DERIVE/COUNTER for cumulative counters`
+  - dpName format: datasourceName_datapointName
+  - (value, 'N') is required — just the number won't work
+  - NWS API may return None — always check before storing`
   },
   {
     track: 'HTTP Tutorial',
     id: 'http-plugin-modeling',
     label: 'Step 7: Datasource (Modeling)',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/plugin-modeling/',
+    objective: 'Update component model properties from within a datasource plugin using ObjectMap',
     greeting: "Final step: teach the Conditions datasource to also update the model — storing the current weather description on each station component. Open dsplugins.py and tell me when you're ready. It's a small addition to the collect method.",
     quickPrompts: ["Walk me through this step", "I got an error", "Show me what to add", "How do I verify it worked?"],
     context: `CURRENT LESSON: Datasource Plugin — Modeling
 
-Goal: Extend the Conditions plugin to also update the model (e.g., store current weather description on the component).
+Goal: Extend the Conditions plugin to also update the model (store weather description on component).
 
 Key concept:
   Datasource plugins can return model changes via data['maps'].
-  This updates the model without waiting for the 12-hour zenmodeler cycle.
-  IMPORTANT: Model updates are much more expensive than events or datapoints — use sparingly.
+  Updates the model without waiting for the 12-hour zenmodeler cycle.
+  IMPORTANT: Model updates are expensive — use sparingly.
 
 1. Add import to dsplugins.py:
    from Products.DataCollector.plugins.DataMaps import ObjectMap
@@ -1472,57 +1490,21 @@ Key concept:
    zenpack --link --install $ZP_TOP_DIR
    serviced service restart zenhub
    zenpython run -v10 --device=api.weather.gov
-   — Look for "datamaps applied" in the output
+   — Look for "datamaps applied" in output
 
-5. Verify in UI:
-   - Navigate to device > NWS Stations > click a station
-   - Overview should show the Current Conditions field
+5. Verify:
+   Device > NWS Stations > click a station > Overview tab
 
 data['maps'] structure:
-  - List of ObjectMap or RelationshipMap instances
   - ObjectMap with relname+modname+id targets a specific component
-  - Same structure as maps returned from modeler plugins
+  - Same structure as maps from modeler plugins
 
 Common gotchas:
-  - Modeling from datasources runs every cycletime — keep it cheap
   - Must set relname, modname, AND id to target a specific component
-  - Reinstall needed after zenpack.yaml property changes (not just Python restart)
-  - Check the Overview tab in UI to confirm property is displayed`
+  - Reinstall needed after zenpack.yaml property changes
+  - Modeling from datasources runs every cycletime — keep it cheap`
   }
 ];
-
-// ── Prerequisites map (stepId → required stepId) ──────────────────────────────
-
-const PREREQUISITES = {
-  'prereq-get-started':     'prereq-dev-env',
-  'snmp-overview':          'prereq-get-started',
-  'snmp-tools':             'snmp-overview',
-  'snmp-device-monitoring': 'snmp-tools',
-  'snmp-device-modeling':   'snmp-device-monitoring',
-  'snmp-component-modeling':'snmp-device-modeling',
-  'snmp-component-monitoring':'snmp-component-modeling',
-  'snmp-traps':             'snmp-component-monitoring',
-  'http-overview':          'snmp-traps',
-  'http-nws-api':           'http-overview',
-  'http-create-zenpack':    'http-nws-api',
-  'http-modeler-plugin':    'http-create-zenpack',
-  'http-add-device':        'http-modeler-plugin',
-  'http-plugin-events':     'http-add-device',
-  'http-plugin-datapoints': 'http-plugin-events',
-  'http-plugin-modeling':   'http-plugin-datapoints',
-};
-
-function isLocked(stepId) {
-  const req = PREREQUISITES[stepId];
-  return req ? !progress[req] : false;
-}
-
-function prereqLabel(stepId) {
-  const req = PREREQUISITES[stepId];
-  if (!req) return '';
-  const s = STEPS.find(s => s.id === req);
-  return s ? s.label : req;
-}
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -1535,6 +1517,18 @@ let guidedMode = false;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
+function applyTheme(dark) {
+  document.documentElement.dataset.theme = dark ? 'dark' : '';
+  document.getElementById('theme-btn').textContent = dark ? '🌙' : '☀️';
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  const next = !isDark;
+  localStorage.setItem('zdk_theme', next ? 'dark' : 'light');
+  applyTheme(next);
+}
+
 function init() {
   const stored = localStorage.getItem('zdk_api_key');
   if (stored) {
@@ -1543,40 +1537,32 @@ function init() {
     document.getElementById('remember-key').checked = true;
     showApp();
   }
-
   progress = JSON.parse(localStorage.getItem('zdk_progress') || '{}');
+  applyTheme(localStorage.getItem('zdk_theme') === 'dark');
 
   document.getElementById('start-btn').addEventListener('click', handleKeySubmit);
-  document.getElementById('api-key-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') handleKeySubmit();
-  });
+  document.getElementById('api-key-input').addEventListener('keydown', e => { if (e.key === 'Enter') handleKeySubmit(); });
   document.getElementById('change-key-btn').addEventListener('click', showKeyScreen);
-  document.getElementById('hamburger').addEventListener('click', toggleSidebar);
-  document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
+  document.getElementById('hamburger').addEventListener('click', toggleCourseMap);
+  document.getElementById('sidebar-overlay').addEventListener('click', closeCourseMap);
   document.getElementById('send-btn').addEventListener('click', sendMessage);
   document.getElementById('new-session-btn').addEventListener('click', newSession);
   document.getElementById('mark-done-btn').addEventListener('click', toggleCurrentDone);
   document.getElementById('guide-btn').addEventListener('click', toggleGuidedMode);
+  document.getElementById('theme-btn').addEventListener('click', toggleTheme);
   document.getElementById('user-input').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
   document.getElementById('user-input').addEventListener('input', autoResize);
-
-  buildSidebar();
+  buildCourseMap();
 }
 
 function handleKeySubmit() {
   const key = document.getElementById('api-key-input').value.trim();
-  if (!key.startsWith('sk-')) {
-    alert('Please enter a valid Anthropic API key (starts with sk-)');
-    return;
-  }
+  if (!key.startsWith('sk-')) { alert('Please enter a valid Anthropic API key (starts with sk-)'); return; }
   apiKey = key;
-  if (document.getElementById('remember-key').checked) {
-    localStorage.setItem('zdk_api_key', key);
-  } else {
-    localStorage.removeItem('zdk_api_key');
-  }
+  if (document.getElementById('remember-key').checked) localStorage.setItem('zdk_api_key', key);
+  else localStorage.removeItem('zdk_api_key');
   showApp();
 }
 
@@ -1591,50 +1577,141 @@ function showKeyScreen() {
   document.getElementById('key-screen').style.display = 'flex';
 }
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
+// ── Course Map ────────────────────────────────────────────────────────────────
 
-function buildSidebar() {
-  const nav = document.getElementById('sidebar-nav');
-  let currentTrack = null;
+function buildCourseMap() {
+  const nav = document.getElementById('course-map-nav');
   nav.innerHTML = '';
 
-  STEPS.forEach((step, idx) => {
-    if (step.track !== currentTrack) {
-      currentTrack = step.track;
-      const label = document.createElement('div');
-      label.className = 'track-label';
-      label.textContent = step.track;
-      nav.appendChild(label);
-    }
+  const tracks = {};
+  STEPS.forEach(s => { if (!tracks[s.track]) tracks[s.track] = []; tracks[s.track].push(s); });
 
-    const locked = isLocked(step.id);
-    const item = document.createElement('div');
-    item.className = 'step-item' + (locked ? ' locked' : '');
-    item.dataset.idx = idx;
+  for (const [trackName, steps] of Object.entries(tracks)) {
+    const done = steps.filter(s => progress[s.id]).length;
+    const section = document.createElement('div');
+    section.className = 'track-section';
 
-    const check = document.createElement('div');
-    check.className = 'step-check' + (progress[step.id] ? ' done' : '');
-    check.textContent = progress[step.id] ? '✓' : '';
-    check.addEventListener('click', e => { e.stopPropagation(); if (!locked) toggleDone(step.id, check); });
+    const header = document.createElement('div');
+    header.className = 'track-header';
+    header.innerHTML = `<span class="track-name">${trackName}</span><span class="track-count">${done}/${steps.length}</span>`;
+    section.appendChild(header);
 
-    const lbl = document.createElement('span');
-    lbl.className = 'step-label';
-    lbl.textContent = step.label;
+    const bar = document.createElement('div');
+    bar.className = 'track-bar';
+    const fill = document.createElement('div');
+    fill.className = 'track-bar-fill';
+    fill.style.width = `${steps.length ? (done / steps.length * 100) : 0}%`;
+    bar.appendChild(fill);
+    section.appendChild(bar);
 
-    item.appendChild(check);
-    item.appendChild(lbl);
+    steps.forEach(step => {
+      const locked = isLocked(step.id);
+      const item = document.createElement('div');
+      item.className = 'step-item' + (locked ? ' locked' : '') + (currentStep?.id === step.id ? ' active' : '');
 
-    if (locked) {
-      const lockEl = document.createElement('span');
-      lockEl.className = 'lock-icon';
-      lockEl.textContent = '🔒';
-      item.appendChild(lockEl);
-    }
+      const check = document.createElement('div');
+      check.className = 'step-check' + (progress[step.id] ? ' done' : '');
+      check.textContent = progress[step.id] ? '✓' : '';
+      if (!locked) check.addEventListener('click', e => { e.stopPropagation(); toggleDone(step.id); });
 
-    item.addEventListener('click', () => { selectStep(step); closeSidebar(); });
-    nav.appendChild(item);
-  });
+      const lbl = document.createElement('span');
+      lbl.className = 'step-label';
+      lbl.textContent = step.label;
+
+      item.appendChild(check);
+      item.appendChild(lbl);
+
+      if (locked) {
+        const lockEl = document.createElement('span');
+        lockEl.className = 'lock-icon';
+        lockEl.textContent = '🔒';
+        item.appendChild(lockEl);
+      }
+
+      if (!locked) item.addEventListener('click', () => { selectStep(step); closeCourseMap(); });
+      section.appendChild(item);
+    });
+
+    nav.appendChild(section);
+  }
 }
+
+function toggleCourseMap() {
+  document.getElementById('course-map').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('visible');
+}
+function closeCourseMap() {
+  document.getElementById('course-map').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('visible');
+}
+
+// ── Step Selection ────────────────────────────────────────────────────────────
+
+function selectStep(step) {
+  currentStep = step;
+  conversationHistory = [];
+
+  guidedMode = false;
+  document.getElementById('guide-btn').textContent = 'Guide Me';
+  document.getElementById('guide-btn').classList.remove('active');
+
+  // Update lesson panel
+  document.getElementById('lesson-track-name').textContent = step.track;
+  document.getElementById('lesson-title').textContent = step.label;
+  document.getElementById('lesson-objective-text').textContent = step.objective;
+  document.getElementById('lesson-content-body').textContent = step.context;
+  document.getElementById('lesson-scroll').scrollTop = 0;
+  document.getElementById('doc-link').href = step.docUrl;
+
+  const doneBtn = document.getElementById('mark-done-btn');
+  doneBtn.textContent = progress[step.id] ? '✓ Completed' : 'Mark complete';
+  doneBtn.className = progress[step.id] ? 'done' : '';
+
+  // Quick prompts in lesson panel
+  const qpContainer = document.getElementById('lesson-quick-prompts');
+  qpContainer.innerHTML = '';
+  step.quickPrompts.forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'qp-btn';
+    btn.textContent = q;
+    btn.addEventListener('click', () => {
+      if (!isStreaming) { document.getElementById('user-input').value = q; sendMessage(); }
+    });
+    qpContainer.appendChild(btn);
+  });
+
+  // Rebuild course map to update active state
+  buildCourseMap();
+
+  // Chat: show greeting (with lock warning if needed)
+  const messages = document.getElementById('messages');
+  messages.innerHTML = '';
+  if (isLocked(step.id)) {
+    appendMessage('assistant', `⚠️ **Heads up:** This step builds on **${prereqLabel(step.id)}**, which you haven't marked complete yet. You can read ahead, but you'll get more out of it in order.\n\n${step.greeting}`);
+  } else {
+    appendMessage('assistant', step.greeting);
+  }
+}
+
+// ── Progress ──────────────────────────────────────────────────────────────────
+
+function toggleDone(stepId) {
+  progress[stepId] = !progress[stepId];
+  localStorage.setItem('zdk_progress', JSON.stringify(progress));
+  if (currentStep && currentStep.id === stepId) {
+    const btn = document.getElementById('mark-done-btn');
+    btn.textContent = progress[stepId] ? '✓ Completed' : 'Mark complete';
+    btn.className = progress[stepId] ? 'done' : '';
+  }
+  buildCourseMap();
+}
+
+function toggleCurrentDone() {
+  if (!currentStep) return;
+  toggleDone(currentStep.id);
+}
+
+// ── Guide Mode ────────────────────────────────────────────────────────────────
 
 function toggleGuidedMode() {
   guidedMode = !guidedMode;
@@ -1650,118 +1727,19 @@ function toggleGuidedMode() {
   }
 }
 
-function selectStep(step) {
-  currentStep = step;
-  conversationHistory = [];
-
-  // reset guide mode on step change
-  guidedMode = false;
-  const guideBtn = document.getElementById('guide-btn');
-  guideBtn.textContent = 'Guide Me';
-  guideBtn.classList.remove('active');
-
-  document.querySelectorAll('.step-item').forEach((el, idx) => {
-    el.classList.toggle('active', STEPS[idx].id === step.id);
-  });
-
-  document.getElementById('step-title').textContent = step.label;
-  document.getElementById('doc-link').href = step.docUrl;
-  document.getElementById('doc-link').textContent = 'Docs ↗';
-
-  const doneBtn = document.getElementById('mark-done-btn');
-  doneBtn.textContent = progress[step.id] ? '✓ Completed' : 'Mark complete';
-  doneBtn.className = progress[step.id] ? 'done' : '';
-
-  buildQuickPrompts(step);
-
-  const messages = document.getElementById('messages');
-  messages.innerHTML = '';
-
-  if (isLocked(step.id)) {
-    appendMessage('assistant', `⚠️ **Heads up:** This step builds on **${prereqLabel(step.id)}**, which you haven't marked complete yet. You can read ahead, but you'll get more out of this step if you finish the previous one first.\n\n${step.greeting}`);
-  } else {
-    appendMessage('assistant', step.greeting);
-  }
-}
-
-function buildQuickPrompts(step) {
-  const container = document.getElementById('quick-prompts');
-  container.innerHTML = '';
-  step.quickPrompts.forEach(q => {
-    const btn = document.createElement('button');
-    btn.className = 'qp-btn';
-    btn.textContent = q;
-    btn.addEventListener('click', () => {
-      if (!isStreaming) {
-        document.getElementById('user-input').value = q;
-        sendMessage();
-      }
-    });
-    container.appendChild(btn);
-  });
-}
-
-function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
-  sidebar.classList.toggle('mobile-open');
-  overlay.classList.toggle('visible');
-}
-
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('mobile-open');
-  document.getElementById('sidebar-overlay').classList.remove('visible');
-}
-
-function toggleDone(stepId, checkEl) {
-  progress[stepId] = !progress[stepId];
-  localStorage.setItem('zdk_progress', JSON.stringify(progress));
-  if (currentStep && currentStep.id === stepId) {
-    const btn = document.getElementById('mark-done-btn');
-    btn.textContent = progress[stepId] ? '✓ Completed' : 'Mark complete';
-    btn.className = progress[stepId] ? 'done' : '';
-  }
-  // Rebuild sidebar so lock icons on subsequent steps update immediately
-  buildSidebar();
-  document.querySelectorAll('.step-item').forEach((el, idx) => {
-    el.classList.toggle('active', currentStep && STEPS[idx].id === currentStep.id);
-  });
-}
-
-function toggleCurrentDone() {
-  if (!currentStep) return;
-  const check = document.querySelector(`.step-item.active .step-check`);
-  if (check) toggleDone(currentStep.id, check);
-  else {
-    progress[currentStep.id] = !progress[currentStep.id];
-    localStorage.setItem('zdk_progress', JSON.stringify(progress));
-    const btn = document.getElementById('mark-done-btn');
-    btn.textContent = progress[currentStep.id] ? '✓ Completed' : 'Mark complete';
-    btn.className = progress[currentStep.id] ? 'done' : '';
-  }
-}
-
 // ── Messages ──────────────────────────────────────────────────────────────────
 
 function appendMessage(role, content) {
   const messages = document.getElementById('messages');
   const msg = document.createElement('div');
   msg.className = 'msg ' + role;
-
   const avatar = document.createElement('div');
   avatar.className = 'msg-avatar';
   avatar.textContent = role === 'assistant' ? 'AI' : 'You';
-
   const bubble = document.createElement('div');
   bubble.className = 'msg-bubble';
-
-  if (role === 'assistant') {
-    bubble.innerHTML = renderMarkdown(content);
-    addCopyButtons(bubble);
-  } else {
-    bubble.textContent = content;
-  }
-
+  if (role === 'assistant') { bubble.innerHTML = renderMarkdown(content); addCopyButtons(bubble); }
+  else bubble.textContent = content;
   msg.appendChild(avatar);
   msg.appendChild(bubble);
   messages.appendChild(msg);
@@ -1773,15 +1751,12 @@ function appendStreamingMessage() {
   const messages = document.getElementById('messages');
   const msg = document.createElement('div');
   msg.className = 'msg assistant';
-
   const avatar = document.createElement('div');
   avatar.className = 'msg-avatar';
   avatar.textContent = 'AI';
-
   const bubble = document.createElement('div');
   bubble.className = 'msg-bubble';
   bubble.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
-
   msg.appendChild(avatar);
   msg.appendChild(bubble);
   messages.appendChild(msg);
@@ -1792,10 +1767,9 @@ function appendStreamingMessage() {
 function renderMarkdown(text) {
   if (typeof marked === 'undefined') return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const renderer = new marked.Renderer();
-  const origCode = renderer.code.bind(renderer);
   renderer.code = (code, lang) => {
     const escaped = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    return `<div class="code-block-wrap"><pre><code>${escaped}</code></pre><button class="copy-btn" data-code="${escaped.replace(/"/g,'&quot;')}">Copy</button></div>`;
+    return `<div class="code-block-wrap"><pre><code>${escaped}</code></pre><button class="copy-btn">Copy</button></div>`;
   };
   marked.use({ renderer, breaks: true });
   return marked.parse(text);
@@ -1806,8 +1780,7 @@ function addCopyButtons(el) {
     btn.addEventListener('click', () => {
       const code = btn.previousElementSibling.querySelector('code').textContent;
       navigator.clipboard.writeText(code).then(() => {
-        btn.textContent = 'Copied!';
-        btn.classList.add('copied');
+        btn.textContent = 'Copied!'; btn.classList.add('copied');
         setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
       });
     });
@@ -1817,7 +1790,7 @@ function addCopyButtons(el) {
 function autoResize() {
   const ta = document.getElementById('user-input');
   ta.style.height = 'auto';
-  ta.style.height = Math.min(ta.scrollHeight, 150) + 'px';
+  ta.style.height = Math.min(ta.scrollHeight, 140) + 'px';
 }
 
 // ── API Call ──────────────────────────────────────────────────────────────────
@@ -1831,15 +1804,10 @@ async function sendMessage() {
   input.value = '';
   input.style.height = 'auto';
   appendMessage('user', text);
-
   conversationHistory.push({ role: 'user', content: text });
-  if (conversationHistory.length > 40) {
-    conversationHistory = conversationHistory.slice(-40);
-  }
+  if (conversationHistory.length > 40) conversationHistory = conversationHistory.slice(-40);
 
-  const guidedInstruction = guidedMode ? `
-
-GUIDED MODE ACTIVE: Walk the student through this step one action at a time. Give one specific instruction (a command to run, a file to edit, a UI action), then explicitly ask them to confirm it worked or share what they see before giving the next instruction. Do not list multiple steps at once. If they hit an error, troubleshoot it fully before moving on.` : '';
+  const guidedInstruction = guidedMode ? `\n\nGUIDED MODE ACTIVE: Walk the student through this step one action at a time. Give one specific instruction, then explicitly ask them to confirm it worked or share what they see before giving the next instruction. Do not list multiple steps at once. Troubleshoot errors fully before moving on.` : '';
 
   const systemPrompt = `${INSTRUCTOR_BASE}${guidedInstruction}
 
@@ -1847,7 +1815,6 @@ ${currentStep.context}
 
 REFERENCE:
 - Tutorial URL for this step: ${currentStep.docUrl}
-- ZDK Background: https://zenpacks.zenoss.io/zdk/background/
 - Troubleshooting: https://zenpacks.zenoss.io/zdk/reference/troubleshooting/
 - CLI Reference: https://zenpacks.zenoss.io/zdk/reference/cli-reference/
 - zenpack.yaml Reference: https://zenpacks.zenoss.io/zdk/reference/zenpack-yaml/`;
@@ -1858,7 +1825,6 @@ REFERENCE:
   document.getElementById('status-text').textContent = 'Thinking…';
 
   let fullText = '';
-
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -1885,17 +1851,14 @@ REFERENCE:
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
-
     bubble.innerHTML = '';
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
       buffer = lines.pop();
-
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
         const raw = line.slice(6).trim();
@@ -1911,9 +1874,7 @@ REFERENCE:
         } catch (_) {}
       }
     }
-
     conversationHistory.push({ role: 'assistant', content: fullText });
-
   } catch (err) {
     bubble.innerHTML = `<span style="color:var(--red)">Error: ${err.message}</span>`;
     conversationHistory.pop();
@@ -1926,8 +1887,7 @@ REFERENCE:
 
 function newSession() {
   conversationHistory = [];
-  const messages = document.getElementById('messages');
-  messages.innerHTML = '';
+  document.getElementById('messages').innerHTML = '';
   if (currentStep) appendMessage('assistant', currentStep.greeting);
 }
 
