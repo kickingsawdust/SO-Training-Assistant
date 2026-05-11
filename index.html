@@ -107,10 +107,17 @@
     /* ── Panel Container ── */
     #panels { flex: 1; display: flex; overflow: hidden; }
 
+    .resize-handle {
+      width: 5px; flex-shrink: 0; cursor: col-resize;
+      background: var(--border); transition: background .15s;
+      position: relative; z-index: 5;
+    }
+    .resize-handle:hover, .resize-handle.dragging { background: var(--accent); }
+
     /* ── Course Map (Left) ── */
     #course-map {
       width: var(--map-w); flex-shrink: 0; background: var(--surface);
-      border-right: 1px solid var(--border); overflow-y: auto;
+      overflow-y: auto;
       display: flex; flex-direction: column;
       transition: transform .25s ease;
     }
@@ -142,7 +149,6 @@
     /* ── Lesson Panel (Middle) ── */
     #lesson-panel {
       width: var(--lesson-w); flex-shrink: 0;
-      border-right: 1px solid var(--border);
       display: flex; flex-direction: column; overflow: hidden;
       background: var(--surface3);
     }
@@ -341,6 +347,7 @@
     <nav id="course-map">
       <div id="course-map-nav"></div>
     </nav>
+    <div class="resize-handle" id="resize-map"></div>
 
     <!-- Middle: Lesson Panel -->
     <div id="lesson-panel">
@@ -366,6 +373,8 @@
         </div>
       </div>
     </div>
+
+    <div class="resize-handle" id="resize-lesson"></div>
 
     <!-- Right: Chat -->
     <div id="chat-panel">
@@ -1904,9 +1913,49 @@ function newSession() {
   if (currentStep) appendMessage('assistant', currentStep.greeting);
 }
 
+// ── Panel Resize ──────────────────────────────────────────────────────────────
+
+function initResize() {
+  const saved = JSON.parse(localStorage.getItem('zdk_panel_widths') || 'null');
+  if (saved) {
+    document.getElementById('course-map').style.width = saved.map + 'px';
+    document.getElementById('lesson-panel').style.width = saved.lesson + 'px';
+  }
+
+  function makeResizable(handleId, panelId, minW, maxW) {
+    const handle = document.getElementById(handleId);
+    const panel = document.getElementById(panelId);
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      handle.classList.add('dragging');
+      const startX = e.clientX;
+      const startW = panel.offsetWidth;
+      function onMove(e) {
+        const delta = e.clientX - startX;
+        panel.style.width = Math.min(maxW, Math.max(minW, startW + delta)) + 'px';
+      }
+      function onUp() {
+        handle.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        localStorage.setItem('zdk_panel_widths', JSON.stringify({
+          map: document.getElementById('course-map').offsetWidth,
+          lesson: document.getElementById('lesson-panel').offsetWidth,
+        }));
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+
+  makeResizable('resize-map', 'course-map', 140, 340);
+  makeResizable('resize-lesson', 'lesson-panel', 260, 560);
+}
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 
 init();
+initResize();
 </script>
 </body>
 </html>
