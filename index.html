@@ -97,10 +97,11 @@
       transition: border-color .15s;
     }
     #theme-btn:hover { border-color: var(--text3); }
-    #change-key-btn {
+    #reset-progress-btn, #change-key-btn {
       font-size: 0.72rem; color: var(--text3); background: none; border: 1px solid var(--border);
       border-radius: 5px; padding: 4px 10px; cursor: pointer;
     }
+    #reset-progress-btn:hover { color: var(--red); border-color: var(--red); }
     #change-key-btn:hover { color: var(--text); border-color: var(--text3); }
 
     /* ── Panel Container ── */
@@ -329,6 +330,7 @@
     <div class="app-title">ZDK <span>Training</span></div>
     <button id="guide-btn">Guide Me</button>
     <button id="theme-btn" title="Toggle dark mode">☀️</button>
+    <button id="reset-progress-btn" title="Clear all progress and start over">Reset</button>
     <button id="change-key-btn">API Key</button>
   </header>
 
@@ -1549,6 +1551,7 @@ function init() {
   document.getElementById('mark-done-btn').addEventListener('click', toggleCurrentDone);
   document.getElementById('guide-btn').addEventListener('click', toggleGuidedMode);
   document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+  document.getElementById('reset-progress-btn').addEventListener('click', resetProgress);
   document.getElementById('user-input').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
@@ -1692,6 +1695,18 @@ function selectStep(step) {
 }
 
 // ── Progress ──────────────────────────────────────────────────────────────────
+
+function resetProgress() {
+  if (!confirm('Clear all progress and start over?')) return;
+  progress = {};
+  localStorage.removeItem('zdk_progress');
+  buildCourseMap();
+  if (currentStep) {
+    const btn = document.getElementById('mark-done-btn');
+    btn.textContent = 'Mark complete';
+    btn.className = '';
+  }
+}
 
 function toggleDone(stepId) {
   progress[stepId] = !progress[stepId];
