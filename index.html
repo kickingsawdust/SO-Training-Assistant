@@ -597,7 +597,7 @@ Examples: ZenPacks.training.NetBotz, ZenPacks.zenoss.ZenPackLib`
     label: 'Dev Environment Setup',
     docUrl: 'https://zenpacks.zenoss.io/zdk/dev-env/',
     objective: 'Configure your Zenoss server with the /z workspace, zenoss user, and bash aliases for ZenPack development',
-    greeting: "Dev environment setup — everything else in the course builds on this. Your Zenoss instance should already be running. Let's configure it for ZenPack development: create the zenoss user, set up the /z shared directory, and add the bash aliases you'll use throughout the course. Ready to start? Run this first command and tell me what you see:",
+    greeting: "Dev environment setup — everything else in the course builds on this. Do you have a running Zenoss instance with Control Center/serviced accessible? If yes, we'll configure it for ZenPack development: create the zenoss user, set up the /z shared directory, and add the bash aliases you'll use throughout the course.",
     quickPrompts: ["Walk me through /z setup", "What is the zenoss user for?", "I hit an error", "What are the bash aliases for?"],
     context: `CURRENT LESSON: Dev Environment Setup
 
@@ -712,7 +712,7 @@ Common gotchas:
     label: 'Overview',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/snmp/monitoring-an-snmp-device/',
     objective: 'Understand the full SNMP tutorial arc — 6 sequential steps building one complete ZenPack',
-    greeting: "The SNMP tutorial builds a complete ZenPack in 6 sequential steps — tools, monitoring, device modeling, component modeling, component monitoring, and traps. Each step builds directly on the last, so work through them in order. Have you finished the Prerequisites (dev environment + Getting Started)? Say yes and we'll jump straight into Step 1.",
+    greeting: "You're into the SNMP tutorial — six steps that build a complete ZenPack from scratch. You'll monitor a NetBotz temperature sensor device: discover its OIDs, create the ZenPack, add a monitoring template, model device attributes, define sensor components, and handle traps. Each step builds directly on the last. Ready to jump into Step 1?",
     quickPrompts: ["Yes — let's start Step 1", "I still need to do the prerequisites", "What exactly are we building?", "What is a ZenPack?"],
     context: `CURRENT LESSON: SNMP Tutorial Overview
 
@@ -1097,7 +1097,7 @@ Common gotchas:
     label: 'Overview',
     docUrl: 'https://zenpacks.zenoss.io/zdk/start/http/monitoring-an-http-api/',
     objective: 'Understand the HTTP tutorial arc — 7 steps building a ZenPack that monitors the NWS weather API',
-    greeting: "The HTTP tutorial is more advanced and assumes you've finished the SNMP tutorial — we skip the basics and go straight into Python plugins and PythonCollector. The ZenPack monitors the National Weather Service API: weather stations as components, alerts as events, and observations as graphable datapoints. Have you completed the SNMP tutorial? Say yes and we'll start.",
+    greeting: "On to the HTTP track — this one's more advanced. You'll build a ZenPack that pulls live data from the National Weather Service API using PythonCollector: weather stations modeled as components, alerts captured as events, and weather observations graphed as datapoints. It's a realistic pattern you can adapt to any HTTP/JSON API. Ready to start Step 1?",
     quickPrompts: ["Yes — let's start", "I haven't done SNMP yet", "What's different from SNMP?", "What is PythonCollector?"],
     context: `CURRENT LESSON: HTTP Tutorial Overview
 
