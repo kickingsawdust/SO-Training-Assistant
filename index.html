@@ -394,29 +394,29 @@
 </div>
 
 <!-- Main App -->
-<div id="app">
-  <div id="sidebar-overlay"></div>
-
-  <!-- Certificate Modal -->
-  <div id="cert-modal">
-    <div id="cert-wrap">
-      <div id="cert-ui-bar">
-        <button class="cert-action-btn" id="cert-close-btn">Close</button>
-        <button class="cert-action-btn primary" id="cert-print-btn">Print / Save as PDF</button>
-      </div>
-      <div id="cert-paper">
-        <div class="cert-seal">🎓</div>
-        <div class="cert-subtitle">Certificate of Completion</div>
-        <div class="cert-headline">ZenPack Development Kit</div>
-        <div class="cert-presented">This certifies that</div>
-        <div class="cert-name" id="cert-name-display">—</div>
-        <div id="cert-incomplete-note" class="cert-incomplete-note" style="display:none"></div>
-        <div class="cert-course">ZDK Training — Full Course</div>
-        <div class="cert-desc">Has completed hands-on training in building custom ZenPacks using the Zenoss ZenPack Development Kit, including SNMP monitoring, device and component modeling, and HTTP/API-based data collection.</div>
-        <div class="cert-date" id="cert-date"></div>
-      </div>
+<!-- Certificate Modal (direct body child so print CSS works) -->
+<div id="cert-modal">
+  <div id="cert-wrap">
+    <div id="cert-ui-bar">
+      <button class="cert-action-btn" id="cert-close-btn">Close</button>
+      <button class="cert-action-btn primary" id="cert-print-btn">Print / Save as PDF</button>
+    </div>
+    <div id="cert-paper">
+      <div class="cert-seal">🎓</div>
+      <div class="cert-subtitle">Certificate of Completion</div>
+      <div class="cert-headline">ZenPack Development Kit</div>
+      <div class="cert-presented">This certifies that</div>
+      <div class="cert-name" id="cert-name-display">—</div>
+      <div id="cert-incomplete-note" class="cert-incomplete-note" style="display:none"></div>
+      <div class="cert-course">ZDK Training — Full Course</div>
+      <div class="cert-desc">Has completed hands-on training in building custom ZenPacks using the Zenoss ZenPack Development Kit, including SNMP monitoring, device and component modeling, and HTTP/API-based data collection.</div>
+      <div class="cert-date" id="cert-date"></div>
     </div>
   </div>
+</div>
+
+<div id="app">
+  <div id="sidebar-overlay"></div>
 
   <!-- Global Header -->
   <header id="app-header">
