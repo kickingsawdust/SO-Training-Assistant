@@ -368,13 +368,6 @@
       display: inline-block; margin-bottom: 16px;
     }
 
-    @media print {
-      body > *:not(#cert-modal) { display: none !important; }
-      #cert-modal { display: flex !important; position: static; background: none; padding: 0; }
-      #cert-wrap { box-shadow: none; max-width: 100%; }
-      #cert-ui-bar { display: none; }
-      #cert-paper { margin: 0; border-color: #b8960c; }
-    }
   </style>
 </head>
 <body>
@@ -1652,7 +1645,7 @@ function init() {
   document.getElementById('reset-progress-btn').addEventListener('click', resetProgress);
   document.getElementById('cert-btn').addEventListener('click', openCertificate);
   document.getElementById('cert-close-btn').addEventListener('click', closeCertificate);
-  document.getElementById('cert-print-btn').addEventListener('click', () => window.print());
+  document.getElementById('cert-print-btn').addEventListener('click', printCertificate);
   document.getElementById('cert-modal').addEventListener('click', e => { if (e.target === document.getElementById('cert-modal')) closeCertificate(); });
   document.getElementById('user-input').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -2038,6 +2031,30 @@ function openCertificate() {
 
 function closeCertificate() {
   document.getElementById('cert-modal').classList.remove('visible');
+}
+
+function printCertificate() {
+  const paper = document.getElementById('cert-paper').outerHTML;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>ZDK Certificate</title><style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+    #cert-paper { border: 3px double #b8960c; padding: 48px 56px; text-align: center; position: relative; background: #fffef8; max-width: 680px; width: 100%; }
+    #cert-paper::before { content: ''; position: absolute; inset: 8px; border: 1px solid rgba(184,150,12,.35); pointer-events: none; }
+    .cert-seal { width: 72px; height: 72px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #4f8ef7, #2563eb); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 2rem; color: #fff; }
+    .cert-subtitle { font-size: 0.8rem; letter-spacing: .18em; text-transform: uppercase; color: #6b7280; margin-bottom: 8px; }
+    .cert-headline { font-size: 2rem; font-family: Georgia, serif; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+    .cert-presented { font-size: 0.85rem; color: #6b7280; margin-bottom: 10px; }
+    .cert-name { font-size: 2.2rem; font-family: Georgia, serif; color: #2563eb; margin-bottom: 16px; border-bottom: 1px solid #e5e7eb; padding-bottom: 14px; }
+    .cert-incomplete-note { font-size: 0.75rem; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 6px 14px; display: inline-block; margin-bottom: 16px; }
+    .cert-course { font-size: 1rem; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+    .cert-desc { font-size: 0.82rem; color: #6b7280; max-width: 420px; margin: 0 auto 24px; line-height: 1.6; }
+    .cert-date { font-size: 0.78rem; color: #9ca3af; margin-top: 8px; }
+    @media print { body { padding: 0; } }
+  </style></head><body>${paper}</body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); win.close(); }, 300);
 }
 
 // ── Panel Resize ──────────────────────────────────────────────────────────────
