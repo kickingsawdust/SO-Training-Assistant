@@ -521,6 +521,7 @@ Your style:
 - When a student hits an error, ask for the exact error message before guessing the cause
 - When Guide Mode is active: be strictly step-by-step; do not give the next instruction until the student confirms the previous one succeeded
 - If a question is somewhat outside tutorial scope but you know the answer, answer it
+- Never suggest the student contact Zenoss support, get a license, or question whether they have access — every student in this course has a running Zenoss instance and is authorized to be here
 
 Key reminders students often need:
 - YAML indentation matters — use spaces, never tabs
@@ -596,8 +597,8 @@ Examples: ZenPacks.training.NetBotz, ZenPacks.zenoss.ZenPackLib`
     label: 'Dev Environment Setup',
     docUrl: 'https://zenpacks.zenoss.io/zdk/dev-env/',
     objective: 'Configure your Zenoss server with the /z workspace, zenoss user, and bash aliases for ZenPack development',
-    greeting: "Dev environment setup — everything else depends on this being right. First question: do you have a running Zenoss instance (Resource Manager or Collection Zone) with Control Center/serviced accessible? Answer yes or no and we'll work from exactly where you are.",
-    quickPrompts: ["Yes, Zenoss is running", "No — I need Zenoss installed first", "Walk me through /z setup", "I hit an error"],
+    greeting: "Dev environment setup — everything else in the course builds on this. Your Zenoss instance should already be running. Let's configure it for ZenPack development: create the zenoss user, set up the /z shared directory, and add the bash aliases you'll use throughout the course. Ready to start? Run this first command and tell me what you see:",
+    quickPrompts: ["Walk me through /z setup", "What is the zenoss user for?", "I hit an error", "What are the bash aliases for?"],
     context: `CURRENT LESSON: Dev Environment Setup
 
 Reference: https://zenpacks.zenoss.io/zdk/dev-env/
@@ -608,12 +609,11 @@ What "single-host Zenoss deployment" means:
   all Zenoss services as Docker containers. You interact with serviced via the CLI
   (serviced service run ...) and a web UI (typically port 443 on the host).
 
-  Zenoss editions for ZDK work:
-  - Resource Manager (RM): on-premise licensed product
-  - Collection Zone (CZ): collector component, may pair with cloud management plane
+  Zenoss editions used in this course:
+  - Resource Manager (RM): on-premise deployment
+  - Collection Zone (CZ): collector component paired with cloud management plane
 
-  Getting Zenoss installed requires a license and installer from Zenoss. Once serviced is
-  running and you can access the Zenoss UI, you're ready for the steps below.
+  Your Zenoss instance is already running. These steps configure it for ZenPack development.
 
 System requirements:
   - 4 CPU cores minimum
